@@ -111,8 +111,8 @@ def get_real_sentinel_data(region_name: str):
             plastic = Math.min(fdi * 20, 1);
         }
         
-        // RGB 강화 + 플라스틱 점수
-        return [red * 3, green * 3, blue * 3, plastic];
+        // RGB 강화 (더 밝게) + 플라스틱 점수
+        return [red * 2550, green * 2550, blue * 2550, plastic * 255];
     }
     """
     
@@ -147,7 +147,7 @@ def get_real_sentinel_data(region_name: str):
     return image_data
 
 def process_sentinel_image(image_data: np.ndarray):
-    """Sentinel 이미지 처리"""
+    """향상된 Sentinel 이미지 처리 - 실제 위성 이미지 시각화"""
     
     # RGB와 플라스틱 레이어 분리
     if image_data.shape[2] >= 4:
@@ -157,28 +157,79 @@ def process_sentinel_image(image_data: np.ndarray):
         rgb = image_data.astype(np.float32)
         plastic = np.zeros((image_data.shape[0], image_data.shape[1]), dtype=np.float32)
     
-    # RGB 정규화 및 대비 향상
-    rgb = np.clip(rgb / 255.0, 0, 1)
+    print(f"🎨 Processing RGB image: shape={rgb.shape}, range=[{rgb.min():.3f}, {rgb.max():.3f}]")
     
-    # 플라스틱 통계
-    plastic_pixels = np.sum(plastic > 0.3)
+    # 고급 이미지 향상 처리
+    # 1. 퍼센타일 기반 정규화 (2%-98%)
+    for channel in range(3):
+        channel_data = rgb[:, :, channel]
+        p2, p98 = np.percentile(channel_data, [2, 98])
+        if p98 > p2:  # 0으로 나누기 방지
+            rgb[:, :, channel] = np.clip((channel_data - p2) / (p98 - p2), 0, 1)
+    
+    # 2. 감마 보정으로 밝기 조정 (위성 이미지에 최적화된 값)
+    gamma = 0.8
+    rgb = np.power(rgb, gamma)
+    
+    # 3. 대비 향상 (히스토그램 스트레칭)
+    for channel in range(3):
+        channel_data = rgb[:, :, channel]
+        min_val, max_val = channel_data.min(), channel_data.max()
+        if max_val > min_val:
+            rgb[:, :, channel] = (channel_data - min_val) / (max_val - min_val)
+    
+    # 4. 색상 균형 조정 (해양 지역 최적화)
+    # 파란색 채널 약간 감소, 녹색 채널 약간 증가
+    rgb[:, :, 0] = np.clip(rgb[:, :, 0] * 1.1, 0, 1)  # 빨강 약간 증가
+    rgb[:, :, 1] = np.clip(rgb[:, :, 1] * 1.2, 0, 1)  # 녹색 증가
+    rgb[:, :, 2] = np.clip(rgb[:, :, 2] * 0.9, 0, 1)  # 파랑 약간 감소
+    
+    print(f"✨ 이미지 향상 완료: 새로운 범위=[{rgb.min():.3f}, {rgb.max():.3f}]")
+    
+    # 플라스틱 통계 (향상된 감지)
+    plastic_threshold = 0.2  # 더 민감한 감지
+    plastic_pixels = np.sum(plastic > plastic_threshold)
     total_pixels = plastic.size
     plastic_percentage = plastic_pixels / total_pixels
     
-    # 핫스팟 탐지
+    print(f"🔍 Plastic detection: {plastic_pixels}/{total_pixels} pixels ({plastic_percentage*100:.3f}%)")
+    
+    # 핫스팟 탐지 (향상된 클러스터링)
     hotspots = []
     if plastic_pixels > 0:
-        # 간단한 핫스팟 탐지
-        y_coords, x_coords = np.where(plastic > 0.5)
+        y_coords, x_coords = np.where(plastic > 0.4)
         if len(x_coords) > 0:
-            # 클러스터링 (간단버전)
-            for i in range(min(10, len(x_coords))):  # 최대 10개
-                hotspots.append({
-                    "lat": float(35.0 + (y_coords[i] / 512) * 1.0),  # 대략적 좌표
-                    "lon": float(128.0 + (x_coords[i] / 512) * 1.0),
-                    "intensity": float(plastic[y_coords[i], x_coords[i]]),
-                    "pixel_count": 1
-                })
+            # 실제 좌표 변환 (한국 해역 기준)
+            region_bounds = {
+                "south_sea": [128.4, 34.6, 128.8, 35.0],  # 거제도 근해
+                "west_sea": [124.5, 35.5, 126.5, 37.5],   # 인천 근해
+                "east_sea": [129.0, 35.5, 130.0, 36.5]    # 울산 근해
+            }
+            
+            # 클러스터링으로 중복 제거
+            unique_hotspots = []
+            for i in range(min(15, len(x_coords))):
+                lat = 34.6 + (y_coords[i] / rgb.shape[0]) * (35.0 - 34.6)
+                lon = 128.4 + (x_coords[i] / rgb.shape[1]) * (128.8 - 128.4)
+                intensity = float(plastic[y_coords[i], x_coords[i]])
+                
+                # 중복 제거 (100m 이내)
+                is_duplicate = False
+                for existing in unique_hotspots:
+                    if abs(existing["lat"] - lat) < 0.001 and abs(existing["lon"] - lon) < 0.001:
+                        is_duplicate = True
+                        break
+                
+                if not is_duplicate and intensity > 0.3:
+                    unique_hotspots.append({
+                        "lat": float(lat),
+                        "lon": float(lon),
+                        "intensity": intensity,
+                        "pixel_count": 1,
+                        "confidence": min(intensity * 100, 95)
+                    })
+            
+            hotspots = unique_hotspots[:10]  # 최대 10개
     
     return rgb, plastic, plastic_percentage, hotspots
 
