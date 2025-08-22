@@ -328,8 +328,6 @@ async def get_region_data(region_name: str, background_tasks: BackgroundTasks):
             print(f"   - Network connectivity issues")
             print(f"   - Invalid authentication credentials")
             # 실패 시 더미 데이터 생성 (더 현실적인 데이터)
-            import numpy as np
-            from scipy import ndimage
             
             # 현실적인 바다 이미지 생성
             image_data = np.zeros((512, 512, 4), dtype=np.float32)
