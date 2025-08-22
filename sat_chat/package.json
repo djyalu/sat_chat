@@ -1,0 +1,108 @@
+{
+  "name": "sat-chat",
+  "version": "1.0.0",
+  "description": "A modern real-time chat application built with scalability and user experience in mind",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "start:prod": "NODE_ENV=production node src/index.js",
+    "build": "webpack --mode production",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "prepare": "husky install",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "clean": "rm -rf dist build node_modules package-lock.json && npm install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/djyalu/sat_chat.git"
+  },
+  "keywords": [
+    "chat",
+    "real-time",
+    "websocket",
+    "messaging",
+    "communication",
+    "socket.io",
+    "nodejs",
+    "react"
+  ],
+  "author": "djyalu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/djyalu/sat_chat/issues"
+  },
+  "homepage": "https://github.com/djyalu/sat_chat#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "compression": "^1.7.4",
+    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "express-validator": "^7.0.1",
+    "express-rate-limit": "^6.10.0",
+    "mongoose": "^7.5.0",
+    "redis": "^4.6.8",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.0",
+    "winston": "^3.10.0",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.0",
+    "@types/express": "^4.17.17",
+    "@types/jest": "^29.5.4",
+    "eslint": "^8.47.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-node": "^11.1.0",
+    "prettier": "^3.0.2",
+    "nodemon": "^3.0.1",
+    "jest": "^29.6.4",
+    "supertest": "^6.3.3",
+    "@playwright/test": "^1.37.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.1",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,scss,md}": [
+      "prettier --write"
+    ]
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!src/**/*.test.{js,jsx,ts,tsx}",
+      "!src/index.js"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.{js,jsx,ts,tsx}",
+      "**/*.test.{js,jsx,ts,tsx}"
+    ],
+    "transform": {
+      "^.+\\.(js|jsx|ts|tsx)$": "babel-jest"
+    }
+  }
+}

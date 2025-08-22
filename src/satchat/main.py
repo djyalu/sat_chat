@@ -13,7 +13,10 @@ from loguru import logger
 
 from satchat.core.config import settings
 from satchat.core.database import init_async_db, check_async_db_connection
-from satchat.api import health, auth, images, detections, alerts, monitoring, sentinel_hub
+from satchat.api import (
+    health, auth, images, detections, alerts, monitoring, 
+    sentinel_hub, planet, byoc, ogc
+)
 
 # Configure logging
 logging.basicConfig(
@@ -146,6 +149,21 @@ app.include_router(
     sentinel_hub.router,
     prefix=f"{settings.api_prefix}/sentinel-hub",
     tags=["sentinel-hub"]
+)
+app.include_router(
+    planet.router,
+    prefix=f"{settings.api_prefix}/planet",
+    tags=["planet"]
+)
+app.include_router(
+    byoc.router,
+    prefix=f"{settings.api_prefix}/byoc",
+    tags=["byoc"]
+)
+app.include_router(
+    ogc.router,
+    prefix=f"{settings.api_prefix}/ogc",
+    tags=["ogc-services"]
 )
 
 

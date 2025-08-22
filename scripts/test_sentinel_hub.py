@@ -45,7 +45,7 @@ async def test_sentinel_hub():
         
         service = SentinelHubService()
         token = await service.get_access_token()
-        print(f"✓ 토큰 획듍 성공: {token[:20]}...")
+        print(f"✓ 토큰 획득 성공: {token[:20]}...")
         
         print("\n=== 한국 해역 테스트 (서해) ===")
         

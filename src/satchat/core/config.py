@@ -71,6 +71,24 @@ class Settings(BaseSettings):
         env="SENTINEL_HUB_ORGANIZATION_ID"
     )
     
+    # BYOC (Bring Your Own COG) 설정
+    byoc_collection_id: str = Field(
+        default="3bea22f5-2445-4a19-ba88-ced6571aef09",
+        env="BYOC_COLLECTION_ID"
+    )
+    byoc_collection_name: str = Field(
+        default="Korea Sea",
+        env="BYOC_COLLECTION_NAME"
+    )
+    byoc_s3_bucket: str = Field(
+        default="aaron_sat",
+        env="BYOC_S3_BUCKET"
+    )
+    byoc_s3_region: str = Field(
+        default="us-west-2",
+        env="BYOC_S3_REGION"
+    )
+    
     kompsat_api_key: Optional[SecretStr] = Field(default=None, env="KOMPSAT_API_KEY")
     kompsat_api_url: str = Field(
         default="https://ksatdb.kari.re.kr/api",
