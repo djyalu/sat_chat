@@ -567,7 +567,15 @@
                         })
                     );
                 } else {
-                    response = await fetch(`${currentApiUrl}/region/${region}`);
+                    // 🆓 무료 향상 옵션 적용
+                    const multiTemporal = document.getElementById('multiTemporal')?.checked;
+                    
+                    const params = new URLSearchParams();
+                    if (multiTemporal) params.append('days_back', '5');
+                    
+                    const url = `${currentApiUrl}/region/${region}` + (params.toString() ? '?' + params.toString() : '');
+                    console.log('🆓 Free Enhancement URL:', url);
+                    response = await fetch(url);
                 }
                 
                 const loadTime = ((Date.now() - startTime) / 1000).toFixed(1);
