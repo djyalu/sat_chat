@@ -66,6 +66,10 @@ class Settings(BaseSettings):
     sentinel_hub_client_id: Optional[str] = Field(default=None, env="SENTINEL_HUB_CLIENT_ID")
     sentinel_hub_client_secret: Optional[SecretStr] = Field(default=None, env="SENTINEL_HUB_CLIENT_SECRET")
     sentinel_hub_instance_id: Optional[str] = Field(default=None, env="SENTINEL_HUB_INSTANCE_ID")
+    sentinel_hub_organization_id: str = Field(
+        default="WS_5a8204bc-452c-454f-b068-b65ee4822073",
+        env="SENTINEL_HUB_ORGANIZATION_ID"
+    )
     
     kompsat_api_key: Optional[SecretStr] = Field(default=None, env="KOMPSAT_API_KEY")
     kompsat_api_url: str = Field(
