@@ -62,6 +62,11 @@ class Settings(BaseSettings):
         env="SENTINEL_API_URL"
     )
     
+    # Sentinel Hub API 설정
+    sentinel_hub_client_id: Optional[str] = Field(default=None, env="SENTINEL_HUB_CLIENT_ID")
+    sentinel_hub_client_secret: Optional[SecretStr] = Field(default=None, env="SENTINEL_HUB_CLIENT_SECRET")
+    sentinel_hub_instance_id: Optional[str] = Field(default=None, env="SENTINEL_HUB_INSTANCE_ID")
+    
     kompsat_api_key: Optional[SecretStr] = Field(default=None, env="KOMPSAT_API_KEY")
     kompsat_api_url: str = Field(
         default="https://ksatdb.kari.re.kr/api",
