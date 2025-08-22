@@ -79,7 +79,7 @@ class SatelliteImage(Base):
     processing_error = Column(Text)
     
     # 메타데이터
-    metadata = Column(JSONB)
+    image_metadata = Column("metadata", JSONB)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -127,7 +127,7 @@ class DebrisDetection(Base):
     
     # 메타데이터
     detection_model = Column(String(100))  # 사용된 모델 이름/버전
-    metadata = Column(JSONB)
+    image_metadata = Column("metadata", JSONB)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -174,7 +174,7 @@ class Alert(Base):
     response_notes = Column(Text)
     
     # 메타데이터
-    metadata = Column(JSONB)
+    image_metadata = Column("metadata", JSONB)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -217,7 +217,7 @@ class MonitoringArea(Base):
     contact_phone = Column(String(50))
     
     # 메타데이터
-    metadata = Column(JSONB)
+    image_metadata = Column("metadata", JSONB)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -263,7 +263,7 @@ class ProcessingJob(Base):
     
     # 메타데이터
     parameters = Column(JSONB)
-    metadata = Column(JSONB)
+    image_metadata = Column("metadata", JSONB)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
     

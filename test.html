@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛰️ SatChat 로컬 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .status-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.online {
+            background: #10b981;
+        }
+        
+        .status-dot.offline {
+            background: #ef4444;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .result-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 400px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f3f4f6;
+        }
+        
+        .result-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+        
+        .btn-small:hover {
+            background: #e5e7eb;
+        }
+        
+        pre {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-card {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛰️ SatChat API 테스트</h1>
+            <p class="subtitle">해양 폐기물 모니터링 시스템 - 로컬 테스트</p>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div id="statusDot" class="status-dot offline"></div>
+                <span id="statusText">서버 상태 확인 중...</span>
+            </div>
+            <div>
+                <span style="color: #6b7280;">API 서버:</span>
+                <strong>http://localhost:8000</strong>
+            </div>
+        </div>
+
+        <div class="test-buttons">
+            <button onclick="testAPI('/')">
+                <span>🏠</span> 서버 상태
+            </button>
+            <button onclick="testAPI('/api/v1/detections')">
+                <span>🎯</span> 탐지 데이터
+            </button>
+            <button onclick="testAPI('/api/v1/statistics')">
+                <span>📊</span> 통계
+            </button>
+            <button onclick="testAPI('/api/v1/alerts')">
+                <span>🔔</span> 알림
+            </button>
+            <button onclick="testLogin()">
+                <span>🔐</span> 로그인 테스트
+            </button>
+            <button onclick="runAllTests()">
+                <span>🚀</span> 전체 테스트
+            </button>
+        </div>
+
+        <div class="result-container">
+            <div class="result-header">
+                <h2 class="result-title">테스트 결과</h2>
+                <div class="result-actions">
+                    <button class="btn-small" onclick="clearResult()">지우기</button>
+                    <button class="btn-small" onclick="copyResult()">복사</button>
+                </div>
+            </div>
+            <div id="result">
+                <p style="color: #6b7280; text-align: center; padding: 40px;">
+                    위의 버튼을 클릭하여 API를 테스트하세요
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 서버 상태 확인
+        async function checkServerStatus() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            try {
+                const response = await fetch('http://localhost:8000/');
+                if (response.ok) {
+                    statusDot.classList.remove('offline');
+                    statusDot.classList.add('online');
+                    statusText.textContent = '서버 온라인';
+                    statusText.style.color = '#10b981';
+                } else {
+                    throw new Error('Server not responding');
+                }
+            } catch (error) {
+                statusDot.classList.remove('online');
+                statusDot.classList.add('offline');
+                statusText.textContent = '서버 오프라인';
+                statusText.style.color = '#ef4444';
+            }
+        }
+
+        // API 테스트
+        async function testAPI(endpoint) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="loading">⏳ 데이터 로딩 중...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8000' + endpoint);
+                const data = await response.json();
+                
+                // 통계 데이터인 경우 특별한 표시
+                if (endpoint === '/api/v1/statistics') {
+                    displayStatistics(data);
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3 style="color: #10b981; margin-bottom: 10px;">✅ 성공: ${endpoint}</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ 오류 발생</h3>
+                        <p>엔드포인트: ${endpoint}</p>
+                        <p>오류 메시지: ${error.message}</p>
+                        <p style="margin-top: 10px; font-size: 0.875rem;">
+                            백엔드 서버가 실행 중인지 확인하세요.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        // 로그인 테스트
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="loading">🔐 로그인 테스트 중...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3 style="color: #10b981; margin-bottom: 10px;">✅ 로그인 성공</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ 로그인 실패</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 통계 표시
+        function displayStatistics(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <h3 style="color: #10b981; margin-bottom: 10px;">✅ 통계 데이터</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${data.total_detections || 0}</div>
+                        <div class="stat-label">총 탐지 건수</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${data.active_alerts || 0}</div>
+                        <div class="stat-label">활성 알림</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${(data.monitored_area || 0).toLocaleString()}</div>
+                        <div class="stat-label">모니터링 면적 (km²)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${data.detection_rate || 0}%</div>
+                        <div class="stat-label">탐지 정확도</div>
+                    </div>
+                </div>
+                <h4 style="margin-top: 20px; margin-bottom: 10px;">원본 데이터:</h4>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        // 전체 테스트
+        async function runAllTests() {
+            const endpoints = ['/', '/api/v1/detections', '/api/v1/statistics', '/api/v1/alerts'];
+            const results = [];
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="loading">🚀 전체 테스트 실행 중...</div>';
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch('http://localhost:8000' + endpoint);
+                    const data = await response.json();
+                    results.push({
+                        endpoint,
+                        status: 'success',
+                        data
+                    });
+                } catch (error) {
+                    results.push({
+                        endpoint,
+                        status: 'error',
+                        error: error.message
+                    });
+                }
+            }
+            
+            // 결과 표시
+            let html = '<h3 style="margin-bottom: 15px;">🎯 전체 테스트 결과</h3>';
+            
+            results.forEach(result => {
+                if (result.status === 'success') {
+                    html += `
+                        <div style="margin-bottom: 10px;">
+                            <span style="color: #10b981;">✅</span> 
+                            <strong>${result.endpoint}</strong> - 성공
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div style="margin-bottom: 10px;">
+                            <span style="color: #ef4444;">❌</span> 
+                            <strong>${result.endpoint}</strong> - 실패: ${result.error}
+                        </div>
+                    `;
+                }
+            });
+            
+            html += '<h4 style="margin-top: 20px; margin-bottom: 10px;">상세 결과:</h4>';
+            html += `<pre>${JSON.stringify(results, null, 2)}</pre>`;
+            
+            resultDiv.innerHTML = html;
+        }
+
+        // 결과 지우기
+        function clearResult() {
+            document.getElementById('result').innerHTML = `
+                <p style="color: #6b7280; text-align: center; padding: 40px;">
+                    위의 버튼을 클릭하여 API를 테스트하세요
+                </p>
+            `;
+        }
+
+        // 결과 복사
+        function copyResult() {
+            const resultText = document.getElementById('result').innerText;
+            navigator.clipboard.writeText(resultText).then(() => {
+                alert('결과가 클립보드에 복사되었습니다!');
+            });
+        }
+
+        // 페이지 로드 시 서버 상태 확인
+        window.onload = function() {
+            checkServerStatus();
+            // 5초마다 서버 상태 확인
+            setInterval(checkServerStatus, 5000);
+        };
+    </script>
+</body>
+</html>
