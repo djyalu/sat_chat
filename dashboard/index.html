@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>해양 폐기물 모니터링 대시보드</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 2.2em;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #27ae60;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .panel h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+        
+        #detectionChart {
+            max-height: 300px;
+        }
+        
+        .detection-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .detection-time {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        .detection-location {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .detection-type {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        
+        .alert-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-high {
+            background: #fee;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .alert-medium {
+            background: #fff8dc;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .github-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .github-link:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.05);
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .dashboard {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="https://github.com/djyalu/sat_chat" target="_blank" class="github-link">
+        🔗 GitHub
+    </a>
+    
+    <div class="dashboard">
+        <div class="header">
+            <h1>
+                🛰️ 해양 폐기물 모니터링 대시보드
+                <span class="status-indicator"></span>
+            </h1>
+            <p style="color: #7f8c8d; font-size: 1.1em;">
+                실시간 위성 데이터 기반 해양 환경 모니터링 시스템
+            </p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value" id="total-detections">1,247</div>
+                <div class="stat-label">총 탐지 건수</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🚨</div>
+                <div class="stat-value" id="active-alerts">3</div>
+                <div class="stat-label">활성 알림</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🌊</div>
+                <div class="stat-value" id="monitored-area">2,450</div>
+                <div class="stat-label">모니터링 면적 (km²)</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value" id="accuracy">94.2%</div>
+                <div class="stat-label">탐지 정확도</div>
+            </div>
+        </div>
+        
+        <div class="main-grid">
+            <div class="panel">
+                <h3>📈 월별 탐지 추이</h3>
+                <canvas id="detectionChart"></canvas>
+            </div>
+            
+            <div class="panel">
+                <h3>🕒 최근 탐지 내역</h3>
+                <div id="recent-detections">
+                    <div class="detection-item">
+                        <div class="detection-location">부산항 인근 해역</div>
+                        <div class="detection-time">2분 전</div>
+                        <div class="detection-type">플라스틱 폐기물</div>
+                    </div>
+                    
+                    <div class="detection-item">
+                        <div class="detection-location">제주 남쪽 해역</div>
+                        <div class="detection-time">15분 전</div>
+                        <div class="detection-type">어망</div>
+                    </div>
+                    
+                    <div class="detection-item">
+                        <div class="detection-location">서해 연평도 근해</div>
+                        <div class="detection-time">1시간 전</div>
+                        <div class="detection-type">부표</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-grid">
+            <div class="panel">
+                <h3>🗺️ 지역별 현황</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div style="font-size: 2em; color: #3498db;">47</div>
+                        <div style="color: #7f8c8d;">서해</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div style="font-size: 2em; color: #27ae60;">62</div>
+                        <div style="color: #7f8c8d;">남해</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div style="font-size: 2em; color: #e74c3c;">33</div>
+                        <div style="color: #7f8c8d;">동해</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div style="font-size: 2em; color: #f39c12;">18</div>
+                        <div style="color: #7f8c8d;">독도 근해</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>📊 폐기물 유형별 분포</h3>
+                <div style="space-y: 15px;">
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>플라스틱</span>
+                            <span>45%</span>
+                        </div>
+                        <div style="height: 8px; background: #ecf0f1; border-radius: 4px;">
+                            <div style="height: 100%; background: #3498db; width: 45%; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>어망</span>
+                            <span>30%</span>
+                        </div>
+                        <div style="height: 8px; background: #ecf0f1; border-radius: 4px;">
+                            <div style="height: 100%; background: #27ae60; width: 30%; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>부표</span>
+                            <span>25%</span>
+                        </div>
+                        <div style="height: 8px; background: #ecf0f1; border-radius: 4px;">
+                            <div style="height: 100%; background: #f39c12; width: 25%; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert-section">
+            <h3 style="color: #2c3e50; margin-bottom: 20px;">🚨 실시간 알림</h3>
+            
+            <div class="alert-high">
+                <strong>긴급 알림</strong><br>
+                부산항 인근에서 대량 플라스틱 폐기물 탐지됨 (95.2% 확신도)
+                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">2분 전</div>
+            </div>
+            
+            <div class="alert-medium">
+                <strong>주의 알림</strong><br>
+                제주 남쪽 해역에서 어망 폐기물 확인 필요
+                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">15분 전</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 차트 초기화
+        const ctx = document.getElementById('detectionChart').getContext('2d');
+        const detectionChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['1월', '2월', '3월', '4월', '5월', '6월'],
+                datasets: [{
+                    label: '탐지 건수',
+                    data: [12, 19, 23, 25, 22, 30],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // 실시간 데이터 업데이트 시뮬레이션
+        function updateStats() {
+            const detections = document.getElementById('total-detections');
+            const currentCount = parseInt(detections.textContent.replace(/,/g, ''));
+            detections.textContent = (currentCount + Math.floor(Math.random() * 3)).toLocaleString();
+        }
+        
+        // 5초마다 업데이트
+        setInterval(updateStats, 5000);
+        
+        // 페이지 로드 시 애니메이션
+        window.addEventListener('load', function() {
+            document.querySelectorAll('.stat-card').forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+    </script>
+</body>
+</html>

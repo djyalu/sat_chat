@@ -240,3 +240,9 @@ curl http://localhost:8000/health
 - Git 브랜치: main
 - Git 커밋: dae2f313
 
+## 체크포인트 4 - 2025-08-22 23:49
+- 내용: Enhanced Sentinel API with realistic ocean data fallback and improved error handling
+- 상태: 활성
+- Git 브랜치: main
+- Git 커밋: e32137fb
+
