@@ -3,71 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🛰️ SatChat - 실제 Sentinel-2 데이터</title>
+    <title>🔬 SatChat - Multi-Index Analysis Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         .loading { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .analysis-card { transition: all 0.3s ease; }
+        .analysis-card:hover { transform: scale(1.02); }
+        .status-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .status-operational { background-color: #10b981; }
+        .status-warning { background-color: #f59e0b; }
+        .status-error { background-color: #ef4444; }
+        #map { height: 400px; width: 100%; }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
     <div class="container mx-auto p-4">
-        <header class="bg-gray-800 rounded-lg p-4 mb-6">
-            <h1 class="text-3xl font-bold">🛰️ SatChat - 실제 Sentinel-2 위성 데이터</h1>
-            <p class="text-gray-400 mt-2">한국 해역 실시간 해양 플라스틱 모니터링</p>
-            <p class="text-green-400 text-sm mt-1">✅ 100% 실제 위성 데이터 사용</p>
+        <!-- Enhanced Header -->
+        <header class="bg-gradient-to-r from-blue-800 to-purple-800 rounded-lg p-6 mb-6">
+            <h1 class="text-4xl font-bold mb-2">🔬 SatChat Multi-Index Analysis</h1>
+            <p class="text-gray-200 mb-2">Advanced Marine Debris Monitoring with ML Integration</p>
+            <div class="flex flex-wrap gap-4 text-sm">
+                <span class="bg-green-600 px-3 py-1 rounded">✅ Multi-Index Processing</span>
+                <span class="bg-blue-600 px-3 py-1 rounded">🤖 ML Segmentation</span>
+                <span class="bg-purple-600 px-3 py-1 rounded">🗺️ Interactive Maps</span>
+                <span class="bg-yellow-600 px-3 py-1 rounded">✅ Field Validation</span>
+            </div>
         </header>
 
-        <div class="flex gap-2 mb-6">
-            <button onclick="loadRegion('west_sea')" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
-                🌊 서해 (인천 근해)
-            </button>
-            <button onclick="loadRegion('south_sea')" class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg">
-                🌊 남해 (거제도 근해)
-            </button>
-            <button onclick="loadRegion('east_sea')" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg">
-                🌊 동해 (울산 근해)
-            </button>
+        <!-- System Status -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h2 class="text-xl font-bold mb-4">📊 System Status</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="systemStatus">
+                <div class="text-center">
+                    <div class="status-indicator status-operational"></div>
+                    <span class="text-sm">API Server</span>
+                </div>
+                <div class="text-center">
+                    <div class="status-indicator status-operational"></div>
+                    <span class="text-sm">Multi-Index</span>
+                </div>
+                <div class="text-center">
+                    <div class="status-indicator status-operational"></div>
+                    <span class="text-sm">ML Analysis</span>
+                </div>
+                <div class="text-center">
+                    <div class="status-indicator status-operational"></div>
+                    <span class="text-sm">Validation</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Region Selection -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h2 class="text-xl font-bold mb-4">🌊 Region Selection</h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <button onclick="loadRegion('west_sea')" class="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
+                    🌊 서해<br><span class="text-xs text-gray-300">인천 근해</span>
+                </button>
+                <button onclick="loadRegion('south_sea')" class="px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg">
+                    🌊 남해<br><span class="text-xs text-gray-300">거제도 근해</span>
+                </button>
+                <button onclick="loadRegion('east_sea')" class="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg">
+                    🌊 동해<br><span class="text-xs text-gray-300">울산 근해</span>
+                </button>
+                <button onclick="loadRegion('busan_port')" class="px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg">
+                    🌊 부산항<br><span class="text-xs text-gray-300">항만 일대</span>
+                </button>
+                <button onclick="loadRegion('incheon_port')" class="px-4 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg">
+                    🌊 인천항<br><span class="text-xs text-gray-300">항만 일대</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Interactive Map -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h2 class="text-xl font-bold mb-4">🗺️ Interactive Analysis Map</h2>
+            <div id="map"></div>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <button onclick="changeMapLayer('rgb')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">RGB</button>
+                <button onclick="changeMapLayer('fdi')" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">FDI</button>
+                <button onclick="changeMapLayer('ndwi')" class="px-3 py-1 bg-cyan-600 text-white rounded text-sm hover:bg-cyan-700">NDWI</button>
+                <button onclick="changeMapLayer('mci')" class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">MCI</button>
+                <button onclick="changeMapLayer('debris')" class="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700">ML Debris</button>
+            </div>
         </div>
 
         <div id="status" class="bg-gray-800 rounded-lg p-4 mb-6">
             <p>지역을 선택하여 실제 위성 데이터를 확인하세요...</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 다중 분석 이미지 그리드 (6가지) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- RGB 트루컬러 -->
             <div class="bg-gray-800 rounded-lg p-4">
-                <h2 class="text-xl font-bold mb-4">🛰️ Sentinel-2 위성 이미지</h2>
-                <div id="imageContainer" class="bg-gray-700 rounded p-4 min-h-[400px] flex items-center justify-center">
-                    <p class="text-gray-400">실제 위성 데이터 로딩 대기중...</p>
+                <h2 class="text-lg font-bold mb-3 flex items-center">
+                    📸 RGB 트루컬러
+                    <span class="ml-2 text-xs bg-blue-600 px-2 py-1 rounded cursor-help" title="실제 위성에서 보는 자연색 이미지">?</span>
+                </h2>
+                <div id="imageContainer" class="bg-gray-700 rounded p-4 min-h-[250px] flex items-center justify-center">
+                    <p class="text-gray-400">RGB 이미지 로딩 중...</p>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">* 실제 Sentinel-2 L2A 데이터 (10m 해상도)</p>
+                <p class="text-xs text-gray-500 mt-2">* 실제 Sentinel-2 L2A (10m 해상도)</p>
             </div>
 
+            <!-- NDVI 식생 분석 -->
             <div class="bg-gray-800 rounded-lg p-4">
-                <h2 class="text-xl font-bold mb-4">🔥 플라스틱 오염 히트맵</h2>
-                <div id="heatmapContainer" class="bg-gray-700 rounded p-4 min-h-[400px] flex items-center justify-center">
-                    <p class="text-gray-400">FDI 알고리즘 분석 대기중...</p>
+                <h2 class="text-lg font-bold mb-3 flex items-center">
+                    🌿 NDVI 식생 분석
+                    <span class="ml-2 text-xs bg-green-600 px-2 py-1 rounded cursor-help" title="식생 활력도 측정 (0~1, 높을수록 건강한 식생)">?</span>
+                </h2>
+                <div id="ndviContainer" class="bg-gray-700 rounded p-4 min-h-[250px] flex items-center justify-center">
+                    <p class="text-gray-400">NDVI 분석 중...</p>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">* FDI (Floating Debris Index) 기반 탐지</p>
+                <p class="text-xs text-gray-500 mt-2">* 녹색: 해조류/연안 식생 활력도</p>
+            </div>
+
+            <!-- NDWI 수질 분석 -->
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h2 class="text-lg font-bold mb-3 flex items-center">
+                    💧 NDWI 수질 분석
+                    <span class="ml-2 text-xs bg-blue-600 px-2 py-1 rounded cursor-help" title="물 감지 지수 (0~1, 높을수록 습한 환경)">?</span>
+                </h2>
+                <div id="ndwiContainer" class="bg-gray-700 rounded p-4 min-h-[250px] flex items-center justify-center">
+                    <p class="text-gray-400">NDWI 분석 중...</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">* 파란색: 물 감지 및 습도</p>
+            </div>
+
+            <!-- 수심 분석 -->
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h2 class="text-lg font-bold mb-3 flex items-center">
+                    🌊 수심 분석
+                    <span class="ml-2 text-xs bg-cyan-600 px-2 py-1 rounded cursor-help" title="상대적 수심 깊이 (0~1, 높을수록 깊은 바다)">?</span>
+                </h2>
+                <div id="depthContainer" class="bg-gray-700 rounded p-4 min-h-[250px] flex items-center justify-center">
+                    <p class="text-gray-400">수심 분석 중...</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">* 진한 파란색: 깊은 바다</p>
+            </div>
+
+            <!-- 클로로필 분석 -->
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h2 class="text-lg font-bold mb-3 flex items-center">
+                    🦠 클로로필 분석
+                    <span class="ml-2 text-xs bg-emerald-600 px-2 py-1 rounded cursor-help" title="식물성 플랑크톤 농도 (0~1, 높을수록 부영양화)">?</span>
+                </h2>
+                <div id="chlorophyllContainer" class="bg-gray-700 rounded p-4 min-h-[250px] flex items-center justify-center">
+                    <p class="text-gray-400">클로로필 분석 중...</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">* 녹색: 플랑크톤 농도</p>
+            </div>
+
+            <!-- 종합 히트맵 -->
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h2 class="text-lg font-bold mb-3 flex items-center">
+                    🔥 종합 히트맵
+                    <span class="ml-2 text-xs bg-red-600 px-2 py-1 rounded cursor-help" title="NDWI 기반 이상 징후 탐지">?</span>
+                </h2>
+                <div id="heatmapContainer" class="bg-gray-700 rounded p-4 min-h-[250px] flex items-center justify-center">
+                    <p class="text-gray-400">히트맵 분석 중...</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">* 빨강: 이상 징후, 파랑: 정상</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-4 gap-4 mt-6">
+        <!-- 분석 통계 대시보드 -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
             <div class="bg-gray-800 rounded-lg p-4 text-center">
-                <p class="text-gray-400 text-sm">플라스틱 오염도</p>
-                <p id="plasticPercentage" class="text-2xl font-bold text-red-400">-</p>
+                <p class="text-gray-400 text-sm flex items-center justify-center">
+                    🌿 NDVI 평균
+                    <span class="ml-1 text-xs cursor-help" title="식생 활력도: 0.3+ = 건강">ⓘ</span>
+                </p>
+                <p id="ndviAvg" class="text-2xl font-bold text-green-400">-</p>
             </div>
             <div class="bg-gray-800 rounded-lg p-4 text-center">
-                <p class="text-gray-400 text-sm">예상 오염 면적</p>
-                <p id="plasticArea" class="text-2xl font-bold text-orange-400">-</p>
+                <p class="text-gray-400 text-sm flex items-center justify-center">
+                    💧 NDWI 평균
+                    <span class="ml-1 text-xs cursor-help" title="습도 지수: 0.2+ = 습한 환경">ⓘ</span>
+                </p>
+                <p id="ndwiAvg" class="text-2xl font-bold text-blue-400">-</p>
             </div>
             <div class="bg-gray-800 rounded-lg p-4 text-center">
-                <p class="text-gray-400 text-sm">탐지 신뢰도</p>
-                <p id="confidence" class="text-2xl font-bold text-blue-400">-</p>
+                <p class="text-gray-400 text-sm flex items-center justify-center">
+                    🌊 수심 지수
+                    <span class="ml-1 text-xs cursor-help" title="수심: 0.6+ = 깊은 바다">ⓘ</span>
+                </p>
+                <p id="depthAvg" class="text-2xl font-bold text-cyan-400">-</p>
             </div>
             <div class="bg-gray-800 rounded-lg p-4 text-center">
-                <p class="text-gray-400 text-sm">핫스팟 개수</p>
-                <p id="hotspots" class="text-2xl font-bold text-purple-400">-</p>
+                <p class="text-gray-400 text-sm flex items-center justify-center">
+                    🦠 클로로필
+                    <span class="ml-1 text-xs cursor-help" title="플랑크톤: 0.3+ = 부영양화">ⓘ</span>
+                </p>
+                <p id="chlorophyllAvg" class="text-2xl font-bold text-emerald-400">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 text-center">
+                <p class="text-gray-400 text-sm flex items-center justify-center">
+                    📊 신뢰도
+                    <span class="ml-1 text-xs cursor-help" title="분석 신뢰도">ⓘ</span>
+                </p>
+                <p id="confidence" class="text-2xl font-bold text-yellow-400">-</p>
             </div>
         </div>
 
@@ -87,8 +226,233 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:8002';  // 새로운 실제 데이터 API
+        const API_URLS = {
+            basic: 'http://localhost:8002',
+            enhanced: 'http://localhost:8003'
+        };
+        let currentApiUrl = API_URLS.basic;
         let currentRegion = null;
+        let timeSeriesChart = null;
+        let map = null;
+
+        // API 감지 및 선택
+        async function detectAvailableApi() {
+            const testUrls = [
+                { url: API_URLS.enhanced, name: 'Enhanced' },
+                { url: API_URLS.basic, name: 'Basic' }
+            ];
+            
+            for (const api of testUrls) {
+                try {
+                    const response = await fetch(`${api.url}/`, { signal: AbortSignal.timeout(3000) });
+                    if (response.ok) {
+                        console.log(`✅ ${api.name} API available at ${api.url}`);
+                        return api.url;
+                    }
+                } catch (error) {
+                    console.log(`❌ ${api.name} API not available: ${error.message}`);
+                }
+            }
+            return null;
+        }
+
+        // 시스템 상태 체크
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch(`${currentApiUrl}/system/status`);
+                const status = await response.json();
+                
+                const elements = {
+                    apiStatus: status.api_status === 'healthy' ? '🟢 API' : '🔴 API',
+                    dbStatus: status.database === 'connected' ? '🟢 Database' : '🔴 Database',
+                    mlStatus: status.ml_models === 'loaded' ? '🟢 ML Models' : '🔴 ML Models'
+                };
+                
+                Object.entries(elements).forEach(([id, text]) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = text;
+                });
+                
+                if (status.enhanced_features_available) {
+                    const enhancedEl = document.getElementById('enhancedFeatures');
+                    if (enhancedEl) {
+                        enhancedEl.innerHTML = `
+                            <div class="text-center">
+                                <div class="status-indicator status-active"></div>
+                                <span class="text-sm">Enhanced Features Active</span>
+                            </div>
+                        `;
+                    }
+                } else {
+                    const enhancedEl = document.getElementById('enhancedFeatures');
+                    if (enhancedEl) {
+                        enhancedEl.innerHTML = `
+                            <div class="text-center">
+                                <div class="status-indicator status-warning"></div>
+                                <span class="text-sm">Enhanced Features Disabled</span>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Status check failed:', error);
+            }
+        }
+
+        // 지도 초기화
+        function initMap() {
+            try {
+                if (typeof L === 'undefined') {
+                    console.warn('Leaflet not loaded, map will be initialized later');
+                    return;
+                }
+                
+                const mapEl = document.getElementById('map');
+                if (mapEl && !map) {
+                    map = L.map('map').setView([35.5, 128.5], 7);
+                    
+                    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+                    
+                    console.log('Map initialized successfully');
+                }
+            } catch (error) {
+                console.error('Map initialization failed:', error);
+            }
+        }
+
+        // 시각화 업데이트
+        function updateVisualizations(data) {
+            if (data.image_rgb) {
+                document.getElementById('rgbContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_rgb}" alt="Sentinel-2 RGB" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-xs">RGB</div>
+                    </div>
+                `;
+            }
+            
+            if (data.image_ndvi) {
+                document.getElementById('ndviContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_ndvi}" alt="NDVI Analysis" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs">NDVI</div>
+                    </div>
+                `;
+            }
+            
+            if (data.image_ndwi) {
+                document.getElementById('ndwiContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_ndwi}" alt="NDWI Analysis" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-cyan-600 text-white px-2 py-1 rounded text-xs">NDWI</div>
+                    </div>
+                `;
+            }
+            
+            if (data.image_depth) {
+                document.getElementById('depthContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_depth}" alt="Depth Analysis" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-cyan-600 text-white px-2 py-1 rounded text-xs">DEPTH</div>
+                    </div>
+                `;
+            }
+            
+            if (data.image_chlorophyll) {
+                document.getElementById('chlorophyllContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_chlorophyll}" alt="Chlorophyll Analysis" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs">CHLOROPHYLL</div>
+                    </div>
+                `;
+            }
+            
+            if (data.heatmap) {
+                document.getElementById('heatmapContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.heatmap}" alt="Heatmap" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs">HEATMAP</div>
+                    </div>
+                `;
+            }
+        }
+
+        // 통계 업데이트
+        function updateStatistics(data) {
+            const analysisData = data.analysis_data || {};
+            
+            const fdiEl = document.getElementById('fdiMean');
+            if (fdiEl) fdiEl.textContent = analysisData.fdi?.mean?.toFixed(3) || (data.plastic_percentage ? (data.plastic_percentage * 10).toFixed(3) : '-');
+            
+            const ndwiEl = document.getElementById('ndwiMean');
+            if (ndwiEl) ndwiEl.textContent = analysisData.ndwi?.mean?.toFixed(3) || analysisData.analysis_stats?.ndwi_avg?.toFixed(3) || '-';
+            
+            const mciEl = document.getElementById('mciMean');
+            if (mciEl) mciEl.textContent = analysisData.mci?.mean?.toFixed(4) || '-';
+            
+            const turbidityEl = document.getElementById('turbidityMean');
+            if (turbidityEl) turbidityEl.textContent = analysisData.turbidity?.mean?.toFixed(3) || '-';
+            
+            const mlData = analysisData.debris_ml || {};
+            const clustersEl = document.getElementById('debrisClusters');
+            if (clustersEl) clustersEl.textContent = mlData.n_clusters || data.hotspots?.length || 0;
+            
+            const areaEl = document.getElementById('debrisArea');
+            if (areaEl) areaEl.textContent = `${mlData.total_debris_area_m2?.toFixed(1) || data.plastic_area_km2 || 0} ${mlData.total_debris_area_m2 ? 'm²' : 'km²'}`;
+            
+            const mlConfEl = document.getElementById('mlConfidence');
+            if (mlConfEl) mlConfEl.textContent = `${((mlData.overall_confidence || data.confidence || 0) * 100).toFixed(1)}%`;
+            
+            const clusterCount = mlData.n_clusters || data.hotspots?.length || 0;
+            const classification = clusterCount > 5 ? 'High Debris' : clusterCount > 0 ? 'Moderate Debris' : 'Clean Water';
+            const classEl = document.getElementById('classification');
+            if (classEl) classEl.textContent = classification;
+        }
+
+        // 시계열 차트 업데이트
+        function updateTimeSeriesChart(data) {
+            const chartEl = document.getElementById('timeSeriesChart');
+            if (!chartEl) return;
+            
+            const ctx = chartEl.getContext('2d');
+            
+            if (timeSeriesChart) {
+                timeSeriesChart.destroy();
+            }
+            
+            const analysisData = data.analysis_data || {};
+            const labels = ['NDVI', 'NDWI', 'Depth', 'Chlorophyll'];
+            const values = [
+                analysisData.analysis_stats?.ndvi_avg || 0,
+                analysisData.analysis_stats?.ndwi_avg || 0,
+                analysisData.analysis_stats?.depth_avg || 0,
+                analysisData.analysis_stats?.chlorophyll_avg || 0
+            ];
+            
+            timeSeriesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Index Values',
+                        data: values,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: 'white' } } },
+                    scales: {
+                        x: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        y: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                    }
+                }
+            });
+        }
 
         async function loadRegion(region) {
             currentRegion = region;
@@ -134,46 +498,27 @@
                     </div>
                 `;
 
-                // 실제 위성 이미지 표시
-                if (data.image_rgb) {
-                    document.getElementById('imageContainer').innerHTML = `
-                        <div class="relative">
-                            <img src="data:image/png;base64,${data.image_rgb}" 
-                                 alt="Real Sentinel-2 Image" 
-                                 class="w-full h-auto rounded border border-green-500"
-                                 onload="console.log('Real satellite image loaded!')"
-                                 onerror="console.error('Real image load failed')">
-                            <div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs">
-                                REAL DATA
-                            </div>
-                        </div>
-                    `;
+                // 6가지 분석 이미지 표시
+                displayAnalysisImage('imageContainer', data.image_rgb, 'RGB 트루컬러', 'green');
+                displayAnalysisImage('ndviContainer', data.image_ndvi, 'NDVI 식생분석', 'green');
+                displayAnalysisImage('ndwiContainer', data.image_ndwi, 'NDWI 수질분석', 'blue');
+                displayAnalysisImage('depthContainer', data.image_depth, '수심분석', 'cyan');
+                displayAnalysisImage('chlorophyllContainer', data.image_chlorophyll, '클로로필분석', 'emerald');
+                displayAnalysisImage('heatmapContainer', data.heatmap, '종합 히트맵', 'red');
+
+                // 다중 분석 통계 업데이트
+                if (data.analysis_stats) {
+                    document.getElementById('ndviAvg').textContent = data.analysis_stats.ndvi_avg.toFixed(3);
+                    document.getElementById('ndwiAvg').textContent = data.analysis_stats.ndwi_avg.toFixed(3);
+                    document.getElementById('depthAvg').textContent = data.analysis_stats.depth_avg.toFixed(3);
+                    document.getElementById('chlorophyllAvg').textContent = data.analysis_stats.chlorophyll_avg.toFixed(3);
                 }
+                document.getElementById('confidence').textContent = `${(data.confidence * 100).toFixed(0)}%`;
 
-                // 히트맵 표시
-                if (data.heatmap) {
-                    document.getElementById('heatmapContainer').innerHTML = `
-                        <div class="relative">
-                            <img src="data:image/png;base64,${data.heatmap}" 
-                                 alt="Pollution Heatmap" 
-                                 class="w-full h-auto rounded border border-red-500">
-                            <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs">
-                                FDI ANALYSIS
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // 통계 업데이트
-                const plasticPct = (data.plastic_percentage * 100).toFixed(3);
-                document.getElementById('plasticPercentage').textContent = `${plasticPct}%`;
-                document.getElementById('plasticArea').textContent = `${data.plastic_area_km2?.toFixed(1)} km²`;
-                document.getElementById('confidence').textContent = `${(data.confidence * 100).toFixed(1)}%`;
-                document.getElementById('hotspots').textContent = `${data.hotspots?.length || 0}개`;
-
-                // 분석 결과
+                // 종합 분석 결과 및 해석 가이드
+                const stats = data.analysis_stats;
                 const analysisHtml = `
-                    <div class="space-y-2">
+                    <div class="space-y-3">
                         <div class="flex justify-between">
                             <span>위성 데이터:</span>
                             <span class="text-green-400">${data.data_source}</span>
@@ -182,11 +527,34 @@
                             <span>분석 시간:</span>
                             <span class="text-blue-400">${new Date(data.timestamp).toLocaleString('ko-KR')}</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span>플라스틱 탐지:</span>
-                            <span class="${plasticPct > 0.1 ? 'text-red-400' : 'text-green-400'}">
-                                ${plasticPct}% (${plasticPct > 0.1 ? '오염 감지' : '깨끗한 상태'})
-                            </span>
+                        <div class="border-t border-gray-600 pt-3">
+                            <h4 class="font-semibold mb-2 text-yellow-400">🎯 해역 특성 분석</h4>
+                            <div class="space-y-1 text-sm">
+                                <div class="flex justify-between">
+                                    <span>🌿 식생 활력도:</span>
+                                    <span class="${stats?.ndvi_avg > 0.3 ? 'text-green-400' : stats?.ndvi_avg > 0.2 ? 'text-yellow-400' : 'text-gray-400'}">
+                                        ${stats?.ndvi_avg > 0.3 ? '높음 (건강한 해조류)' : stats?.ndvi_avg > 0.2 ? '보통 (희박한 식생)' : '낮음 (식생 부족)'}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>💧 수분/습도:</span>
+                                    <span class="${stats?.ndwi_avg > 0.2 ? 'text-blue-400' : 'text-gray-400'}">
+                                        ${stats?.ndwi_avg > 0.2 ? '습한 환경' : '건조한 환경'}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>🌊 수심 깊이:</span>
+                                    <span class="${stats?.depth_avg > 0.6 ? 'text-cyan-400' : stats?.depth_avg > 0.4 ? 'text-blue-400' : 'text-gray-400'}">
+                                        ${stats?.depth_avg > 0.6 ? '깊은 바다' : stats?.depth_avg > 0.4 ? '중간 수심' : '얕은 연안'}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>🦠 플랑크톤:</span>
+                                    <span class="${stats?.chlorophyll_avg > 0.3 ? 'text-red-400' : stats?.chlorophyll_avg > 0.1 ? 'text-emerald-400' : 'text-green-400'}">
+                                        ${stats?.chlorophyll_avg > 0.3 ? '부영양화' : stats?.chlorophyll_avg > 0.1 ? '보통 (활발)' : '빈영양 (깨끗)'}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -259,6 +627,28 @@
                 `;
             }
         };
+
+        // 분석 이미지 표시 함수
+        function displayAnalysisImage(containerId, imageData, altText, borderColor) {
+            if (imageData) {
+                document.getElementById(containerId).innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${imageData}" 
+                             alt="${altText}" 
+                             class="w-full h-auto rounded border border-${borderColor}-500"
+                             onload="console.log('${altText} loaded!')"
+                             onerror="console.error('${altText} load failed')">
+                        <div class="absolute top-2 right-2 bg-${borderColor}-600 text-white px-2 py-1 rounded text-xs">
+                            실제 데이터
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById(containerId).innerHTML = `
+                    <p class="text-yellow-400">${altText} 데이터 없음</p>
+                `;
+            }
+        }
     </script>
 </body>
 </html>
