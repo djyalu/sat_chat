@@ -5,8 +5,6 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python real_sentinel_api.py
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: SENTINEL_HUB_CLIENT_ID
         sync: false
       - key: SENTINEL_HUB_CLIENT_SECRET
