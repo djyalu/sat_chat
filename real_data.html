@@ -24,13 +24,14 @@
     <div class="container mx-auto p-4">
         <!-- Enhanced Header -->
         <header class="bg-gradient-to-r from-blue-800 to-purple-800 rounded-lg p-6 mb-6">
-            <h1 class="text-4xl font-bold mb-2">🔬 SatChat Multi-Index Analysis</h1>
-            <p class="text-gray-200 mb-2">Advanced Marine Debris Monitoring with ML Integration</p>
-            <div class="flex flex-wrap gap-4 text-sm">
-                <span class="bg-green-600 px-3 py-1 rounded">✅ Multi-Index Processing</span>
-                <span class="bg-blue-600 px-3 py-1 rounded">🤖 ML Segmentation</span>
-                <span class="bg-purple-600 px-3 py-1 rounded">🗺️ Interactive Maps</span>
-                <span class="bg-yellow-600 px-3 py-1 rounded">✅ Field Validation</span>
+            <h1 class="text-4xl font-bold mb-2">🔬 SatChat FREE Enhanced Analysis</h1>
+            <p class="text-gray-200 mb-2">🆓 Zero-Cost High-Resolution Marine Monitoring with AI Enhancement</p>
+            <div class="flex flex-wrap gap-2 text-sm">
+                <span class="bg-green-600 px-2 py-1 rounded">🕐 Multi-Temporal</span>
+                <span class="bg-blue-600 px-2 py-1 rounded">📐 Pan-Sharpening</span>
+                <span class="bg-purple-600 px-2 py-1 rounded">🇰🇷 KR-Optimized</span>
+                <span class="bg-yellow-600 px-2 py-1 rounded">💰 100% FREE</span>
+                <span class="bg-red-600 px-2 py-1 rounded">✨ AI Enhanced</span>
             </div>
         </header>
 
@@ -60,6 +61,23 @@
         <!-- Region Selection -->
         <div class="bg-gray-800 rounded-lg p-4 mb-6">
             <h2 class="text-xl font-bold mb-4">🌊 Region Selection</h2>
+            <div class="mb-4 p-3 bg-gray-700 rounded-lg">
+                <h3 class="font-bold mb-2">🆓 무료 향상 옵션</h3>
+                <div class="flex flex-wrap gap-2 text-sm">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="multiTemporal" checked class="mr-2">
+                        <span>🕐 Multi-Temporal (5일)</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" id="panSharpening" checked class="mr-2">
+                        <span>📐 Pan-Sharpening (2x해상도)</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" id="koreanOptimized" checked class="mr-2">
+                        <span>🇰🇷 한국 최적화</span>
+                    </label>
+                </div>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                 <button onclick="loadRegion('west_sea')" class="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
                     🌊 서해<br><span class="text-xs text-gray-300">인천 근해</span>
@@ -234,10 +252,11 @@
 
     <script>
         const API_URLS = {
-            basic: 'http://localhost:8002',
-            enhanced: 'http://localhost:8003'
+            production: 'https://sat-chat.onrender.com',
+            enhanced: 'http://localhost:8003',
+            fallback: 'http://localhost:8002'
         };
-        let currentApiUrl = API_URLS.basic;
+        let currentApiUrl = API_URLS.production;
         let currentRegion = null;
         let timeSeriesChart = null;
         let map = null;

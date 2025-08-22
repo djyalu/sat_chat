@@ -299,9 +299,10 @@
     </div>
 
     <script>
-        // API Configuration - Try Enhanced API first, then fallback
+        // API Configuration - Production and Development
         const API_URLS = {
-            enhanced: 'http://localhost:8003',
+            production: 'https://sat-chat.onrender.com',
+            enhanced: 'http://localhost:8003', 
             fallback: 'http://localhost:8002'
         };
         
@@ -311,8 +312,23 @@
         let currentTileLayer = null;
         let timeSeriesChart = null;
 
-        // API Detection
+        // API Detection - Production First Strategy
         async function detectAvailableApi() {
+            // 1. Try Production API (Render) first
+            try {
+                const response = await fetch(`${API_URLS.production}/`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    console.log('🌐 Production API (Render) is available');
+                    return API_URLS.production;
+                }
+            } catch (error) {
+                console.log('Production API not available, trying local...');
+            }
+            
+            // 2. Try Enhanced API (localhost)
             try {
                 const response = await fetch(`${API_URLS.enhanced}/system/status`);
                 if (response.ok) {
@@ -323,6 +339,7 @@
                 console.log('Enhanced API not available, trying fallback...');
             }
             
+            // 3. Try Fallback API (localhost)
             try {
                 const response = await fetch(`${API_URLS.fallback}/`);
                 if (response.ok) {
