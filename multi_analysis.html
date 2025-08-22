@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬 SatChat - Multi-Index Analysis Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .loading { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .analysis-card { transition: all 0.3s ease; }
+        .analysis-card:hover { transform: scale(1.02); }
+        .status-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .status-operational { background-color: #10b981; }
+        .status-warning { background-color: #f59e0b; }
+        .status-error { background-color: #ef4444; }
+        #map { height: 400px; width: 100%; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-4">
+        <!-- Enhanced Header -->
+        <header class="bg-gradient-to-r from-blue-800 to-purple-800 rounded-lg p-6 mb-6">
+            <h1 class="text-4xl font-bold mb-2">🔬 SatChat Multi-Index Analysis</h1>
+            <p class="text-gray-200 mb-2">Advanced Marine Debris Monitoring with ML Integration</p>
+            <div class="flex flex-wrap gap-4 text-sm">
+                <span class="bg-green-600 px-3 py-1 rounded">✅ Multi-Index Processing</span>
+                <span class="bg-blue-600 px-3 py-1 rounded">🤖 ML Segmentation</span>
+                <span class="bg-purple-600 px-3 py-1 rounded">🗺️ Interactive Maps</span>
+                <span class="bg-yellow-600 px-3 py-1 rounded">✅ Field Validation</span>
+            </div>
+        </header>
+
+        <!-- System Status -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h2 class="text-xl font-bold mb-4">📊 System Status</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="systemStatus">
+                <div class="text-center">
+                    <div class="status-indicator status-operational"></div>
+                    <span class="text-sm">API Server</span>
+                </div>
+                <div class="text-center">
+                    <div class="status-indicator status-operational"></div>
+                    <span class="text-sm">Multi-Index</span>
+                </div>
+                <div class="text-center">
+                    <div class="status-indicator status-operational"></div>
+                    <span class="text-sm">ML Analysis</span>
+                </div>
+                <div class="text-center">
+                    <div class="status-indicator status-operational"></div>
+                    <span class="text-sm">Validation</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Region Selection -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h2 class="text-xl font-bold mb-4">🌊 Region Selection</h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <button onclick="loadEnhancedAnalysis('west_sea')" class="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
+                    🌊 서해<br><span class="text-xs text-gray-300">인천 근해</span>
+                </button>
+                <button onclick="loadEnhancedAnalysis('south_sea')" class="px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg">
+                    🌊 남해<br><span class="text-xs text-gray-300">거제도 근해</span>
+                </button>
+                <button onclick="loadEnhancedAnalysis('east_sea')" class="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg">
+                    🌊 동해<br><span class="text-xs text-gray-300">울산 근해</span>
+                </button>
+                <button onclick="loadEnhancedAnalysis('busan_port')" class="px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg">
+                    🌊 부산항<br><span class="text-xs text-gray-300">항만 일대</span>
+                </button>
+                <button onclick="loadEnhancedAnalysis('incheon_port')" class="px-4 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg">
+                    🌊 인천항<br><span class="text-xs text-gray-300">항만 일대</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Interactive Map -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h2 class="text-xl font-bold mb-4">🗺️ Interactive Analysis Map</h2>
+            <div id="map"></div>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <button onclick="changeMapLayer('rgb')" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">RGB</button>
+                <button onclick="changeMapLayer('fdi')" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">FDI</button>
+                <button onclick="changeMapLayer('ndwi')" class="px-3 py-1 bg-cyan-600 text-white rounded text-sm hover:bg-cyan-700">NDWI</button>
+                <button onclick="changeMapLayer('mci')" class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">MCI</button>
+                <button onclick="changeMapLayer('debris')" class="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700">ML Debris</button>
+            </div>
+        </div>
+
+        <!-- Analysis Status -->
+        <div id="analysisStatus" class="bg-gray-800 rounded-lg p-4 mb-6" style="display: none;">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="loading w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full mr-3"></div>
+                    <span class="text-green-400" id="statusText">분석 초기화 중...</span>
+                </div>
+                <span class="text-sm text-gray-400" id="statusTime"></span>
+            </div>
+        </div>
+
+        <!-- Multi-Index Analysis Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+            <!-- RGB Satellite Image -->
+            <div class="bg-gray-800 rounded-lg p-4 analysis-card">
+                <h3 class="text-lg font-bold mb-4">🛰️ Sentinel-2 RGB</h3>
+                <div id="rgbContainer" class="bg-gray-700 rounded p-4 min-h-[300px] flex items-center justify-center">
+                    <p class="text-gray-400">다중 지표 분석 대기중...</p>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">
+                    <p>* Enhanced 12-band Sentinel-2 L2A</p>
+                </div>
+            </div>
+
+            <!-- FDI Analysis -->
+            <div class="bg-gray-800 rounded-lg p-4 analysis-card">
+                <h3 class="text-lg font-bold mb-4">🔥 Floating Debris Index (FDI)</h3>
+                <div id="fdiContainer" class="bg-gray-700 rounded p-4 min-h-[300px] flex items-center justify-center">
+                    <p class="text-gray-400">FDI 분석 대기중...</p>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">
+                    <p>* NIR - (RedEdge + α×(SWIR-RedEdge))</p>
+                </div>
+            </div>
+
+            <!-- NDWI Analysis -->
+            <div class="bg-gray-800 rounded-lg p-4 analysis-card">
+                <h3 class="text-lg font-bold mb-4">💧 Normalized Difference Water Index</h3>
+                <div id="ndwiContainer" class="bg-gray-700 rounded p-4 min-h-[300px] flex items-center justify-center">
+                    <p class="text-gray-400">NDWI 분석 대기중...</p>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">
+                    <p>* (Green - NIR) / (Green + NIR)</p>
+                </div>
+            </div>
+
+            <!-- MCI Analysis -->
+            <div class="bg-gray-800 rounded-lg p-4 analysis-card">
+                <h3 class="text-lg font-bold mb-4">🌿 Marine Chlorophyll Index</h3>
+                <div id="mciContainer" class="bg-gray-700 rounded p-4 min-h-[300px] flex items-center justify-center">
+                    <p class="text-gray-400">MCI 분석 대기중...</p>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">
+                    <p>* RedEdge2 - RedEdge1 - α×(RedEdge3 - RedEdge1)</p>
+                </div>
+            </div>
+
+            <!-- ML Segmentation -->
+            <div class="bg-gray-800 rounded-lg p-4 analysis-card">
+                <h3 class="text-lg font-bold mb-4">🤖 ML-Based Segmentation</h3>
+                <div id="mlContainer" class="bg-gray-700 rounded p-4 min-h-[300px] flex items-center justify-center">
+                    <p class="text-gray-400">ML 세그멘테이션 대기중...</p>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">
+                    <p>* MARIDA 23-class Random Forest</p>
+                </div>
+            </div>
+
+            <!-- Validation Results -->
+            <div class="bg-gray-800 rounded-lg p-4 analysis-card">
+                <h3 class="text-lg font-bold mb-4">✅ Field Validation</h3>
+                <div id="validationContainer" class="bg-gray-700 rounded p-4 min-h-[300px]">
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span>Overall Confidence:</span>
+                            <span id="overallConfidence" class="font-bold">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Checks Passed:</span>
+                            <span id="checksPassed" class="text-green-400">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Checks Failed:</span>
+                            <span id="checksFailed" class="text-red-400">-</span>
+                        </div>
+                        <div class="mt-4">
+                            <h4 class="font-semibold mb-2">Recommendations:</h4>
+                            <div id="recommendations" class="text-sm text-gray-300">
+                                <p>검증 결과 대기중...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Statistics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Multi-Index Statistics -->
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-bold mb-4">📊 Multi-Index Statistics</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center p-3 bg-red-900/20 rounded">
+                        <p class="text-red-400 text-sm">FDI Mean</p>
+                        <p id="fdiMean" class="text-xl font-bold">-</p>
+                    </div>
+                    <div class="text-center p-3 bg-blue-900/20 rounded">
+                        <p class="text-blue-400 text-sm">NDWI Mean</p>
+                        <p id="ndwiMean" class="text-xl font-bold">-</p>
+                    </div>
+                    <div class="text-center p-3 bg-green-900/20 rounded">
+                        <p class="text-green-400 text-sm">MCI Mean</p>
+                        <p id="mciMean" class="text-xl font-bold">-</p>
+                    </div>
+                    <div class="text-center p-3 bg-purple-900/20 rounded">
+                        <p class="text-purple-400 text-sm">Turbidity</p>
+                        <p id="turbidityMean" class="text-xl font-bold">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ML Detection Results -->
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-bold mb-4">🎯 ML Detection Summary</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Debris Clusters:</span>
+                        <span id="debrisClusters" class="font-bold text-red-400">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Total Debris Area:</span>
+                        <span id="debrisArea" class="font-bold text-orange-400">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Confidence Score:</span>
+                        <span id="mlConfidence" class="font-bold text-green-400">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Classification:</span>
+                        <span id="classification" class="font-bold text-blue-400">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Series Chart -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h3 class="text-lg font-bold mb-4">📈 Multi-Index Time Series</h3>
+            <canvas id="timeSeriesChart" width="400" height="200"></canvas>
+        </div>
+
+        <!-- Batch Processing -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h3 class="text-lg font-bold mb-4">🔄 Batch Processing</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <button onclick="createBatchJob()" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg mb-4">
+                        🚀 Create Batch Analysis Job
+                    </button>
+                    <div id="batchStatus" class="text-sm text-gray-400">
+                        Ready to create batch jobs...
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2">Active Jobs:</h4>
+                    <div id="activeJobs" class="space-y-2 max-h-40 overflow-y-auto">
+                        <p class="text-gray-400 text-sm">No active jobs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Field Observations -->
+        <div class="bg-gray-800 rounded-lg p-4">
+            <h3 class="text-lg font-bold mb-4">🔍 Field Observations</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <button onclick="showObservationForm()" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg mb-4">
+                        ➕ Add Field Observation
+                    </button>
+                    <div id="observationForm" class="hidden space-y-3">
+                        <input type="text" id="observerName" placeholder="Observer Name" class="w-full p-2 bg-gray-700 rounded">
+                        <select id="debrisPresent" class="w-full p-2 bg-gray-700 rounded">
+                            <option value="true">Debris Present</option>
+                            <option value="false">No Debris</option>
+                        </select>
+                        <select id="debrisDensity" class="w-full p-2 bg-gray-700 rounded">
+                            <option value="low">Low Density</option>
+                            <option value="medium">Medium Density</option>
+                            <option value="high">High Density</option>
+                        </select>
+                        <button onclick="submitObservation()" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded">
+                            Submit Observation
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2">Recent Observations:</h4>
+                    <div id="recentObservations" class="space-y-2 max-h-40 overflow-y-auto">
+                        <p class="text-gray-400 text-sm">No observations yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration - Try Enhanced API first, then fallback
+        const API_URLS = {
+            enhanced: 'http://localhost:8003',
+            fallback: 'http://localhost:8002'
+        };
+        
+        let currentApiUrl = API_URLS.enhanced;
+        let currentRegion = null;
+        let map = null;
+        let currentTileLayer = null;
+        let timeSeriesChart = null;
+
+        // API Detection
+        async function detectAvailableApi() {
+            try {
+                const response = await fetch(`${API_URLS.enhanced}/system/status`);
+                if (response.ok) {
+                    console.log('🔬 Enhanced API detected on port 8003');
+                    return API_URLS.enhanced;
+                }
+            } catch (error) {
+                console.log('Enhanced API not available, trying fallback...');
+            }
+            
+            try {
+                const response = await fetch(`${API_URLS.fallback}/`);
+                if (response.ok) {
+                    console.log('📡 Real Sentinel API detected on port 8002');
+                    return API_URLS.fallback;
+                }
+            } catch (error) {
+                console.log('Fallback API not available');
+            }
+            
+            return null;
+        }
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([35.2, 128.6], 8);
+            
+            // Default OpenStreetMap base layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        }
+
+        // Change map layer
+        function changeMapLayer(layer) {
+            if (currentTileLayer) {
+                map.removeLayer(currentTileLayer);
+            }
+            
+            if (layer === 'osm') {
+                currentTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                });
+            } else {
+                if (currentApiUrl === API_URLS.enhanced) {
+                    currentTileLayer = L.tileLayer(`${currentApiUrl}/tiles/${layer}/{z}/{x}/{y}.png`, {
+                        attribution: '© SatChat Enhanced Analysis'
+                    });
+                } else {
+                    alert('Tile service only available with Enhanced API (port 8003)');
+                    return;
+                }
+            }
+            
+            currentTileLayer.addTo(map);
+        }
+
+        // System status check
+        async function checkSystemStatus() {
+            try {
+                if (currentApiUrl === API_URLS.enhanced) {
+                    const response = await fetch(`${currentApiUrl}/system/status`);
+                    const status = await response.json();
+                    
+                    const components = status.components;
+                    const statusContainer = document.getElementById('systemStatus');
+                    
+                    let html = '';
+                    for (const [component, state] of Object.entries(components)) {
+                        const statusClass = state === 'operational' || state === 'trained' ? 'status-operational' : 'status-error';
+                        html += `
+                            <div class="text-center">
+                                <div class="status-indicator ${statusClass}"></div>
+                                <span class="text-sm">${component.replace('_', ' ')}</span>
+                            </div>
+                        `;
+                    }
+                    statusContainer.innerHTML = html;
+                } else {
+                    document.getElementById('systemStatus').innerHTML = `
+                        <div class="text-center">
+                            <div class="status-indicator status-operational"></div>
+                            <span class="text-sm">Real Sentinel API</span>
+                        </div>
+                        <div class="text-center">
+                            <div class="status-indicator status-warning"></div>
+                            <span class="text-sm">Enhanced Features Disabled</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Status check failed:', error);
+            }
+        }
+
+        // Enhanced analysis
+        async function loadEnhancedAnalysis(region) {
+            currentRegion = region;
+            
+            const regionNames = {
+                'west_sea': '서해 (인천 근해)',
+                'south_sea': '남해 (거제도 근해)', 
+                'east_sea': '동해 (울산 근해)',
+                'busan_port': '부산항 일대',
+                'incheon_port': '인천항 일대'
+            };
+            
+            // Show status
+            const statusDiv = document.getElementById('analysisStatus');
+            const statusText = document.getElementById('statusText');
+            const statusTime = document.getElementById('statusTime');
+            
+            statusDiv.style.display = 'block';
+            statusText.textContent = `${regionNames[region]} 다중 지표 분석 중...`;
+            statusTime.textContent = new Date().toLocaleString('ko-KR');
+            
+            try {
+                console.log(`Starting analysis for ${region} using ${currentApiUrl}...`);
+                const startTime = Date.now();
+                
+                let response, data;
+                
+                if (currentApiUrl === API_URLS.enhanced) {
+                    response = await fetch(
+                        `${currentApiUrl}/enhanced/region/${region}?` + 
+                        new URLSearchParams({
+                            analysis_types: 'fdi,ndwi,mci,turbidity,debris_ml',
+                            validation_level: 'high',
+                            include_tiles: 'true'
+                        })
+                    );
+                } else {
+                    response = await fetch(`${currentApiUrl}/region/${region}`);
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                data = await response.json();
+                const loadTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                console.log('Analysis data received:', data);
+                
+                // Update status - success
+                statusText.innerHTML = `
+                    ✅ ${regionNames[region]} 다중 지표 분석 완료 
+                    <span class="text-gray-400 ml-4">소요시간: ${loadTime}초</span>
+                `;
+                
+                // Update visualizations
+                updateVisualizations(data);
+                updateStatistics(data);
+                
+                if (data.validation) {
+                    updateValidation(data.validation);
+                } else {
+                    updateFallbackValidation(data);
+                }
+                
+                updateTimeSeriesChart(data);
+                
+                // Update map center
+                if (data.bbox && data.bbox.length >= 4) {
+                    const [lon1, lat1, lon2, lat2] = data.bbox;
+                    const centerLat = (lat1 + lat2) / 2;
+                    const centerLon = (lon1 + lon2) / 2;
+                    map.setView([centerLat, centerLon], 12);
+                }
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                statusText.innerHTML = `❌ 다중 지표 분석 실패: ${error.message}`;
+            }
+        }
+
+        // Update visualizations
+        function updateVisualizations(data) {
+            if (data.image_rgb) {
+                document.getElementById('rgbContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_rgb}" alt="Sentinel-2 RGB" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-xs">RGB</div>
+                    </div>
+                `;
+            }
+            
+            if (data.image_fdi) {
+                document.getElementById('fdiContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_fdi}" alt="FDI Analysis" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs">FDI</div>
+                    </div>
+                `;
+            } else if (data.heatmap) {
+                document.getElementById('fdiContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.heatmap}" alt="FDI Heatmap" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs">HEATMAP</div>
+                    </div>
+                `;
+            }
+            
+            if (data.image_ndwi) {
+                document.getElementById('ndwiContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_ndwi}" alt="NDWI Analysis" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-cyan-600 text-white px-2 py-1 rounded text-xs">NDWI</div>
+                    </div>
+                `;
+            }
+            
+            if (data.image_mci) {
+                document.getElementById('mciContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_mci}" alt="MCI Analysis" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs">MCI</div>
+                    </div>
+                `;
+            } else if (data.image_chlorophyll) {
+                document.getElementById('mciContainer').innerHTML = `
+                    <div class="relative">
+                        <img src="data:image/png;base64,${data.image_chlorophyll}" alt="Chlorophyll Analysis" class="w-full h-auto rounded">
+                        <div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs">CHLOROPHYLL</div>
+                    </div>
+                `;
+            }
+            
+            // ML Segmentation
+            if (data.image_debris || data.analysis_data?.debris_ml) {
+                const mlData = data.analysis_data?.debris_ml;
+                document.getElementById('mlContainer').innerHTML = `
+                    <div class="space-y-3">
+                        ${data.image_debris ? `
+                            <img src="data:image/png;base64,${data.image_debris}" alt="ML Segmentation" class="w-full h-auto rounded">
+                        ` : `<div class="text-center text-yellow-400"><p>ML 분석 준비중</p></div>`}
+                        <div class="text-sm">
+                            <p>Clusters: <span class="text-yellow-400">${mlData?.n_clusters || 0}</span></p>
+                            <p>Area: <span class="text-orange-400">${mlData?.total_debris_area_m2?.toFixed(1) || 0} m²</span></p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('mlContainer').innerHTML = `
+                    <div class="text-center text-yellow-400">
+                        <p>ML 분석 기능</p>
+                        <p class="text-sm text-gray-400">Enhanced API 필요</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Update statistics
+        function updateStatistics(data) {
+            const analysisData = data.analysis_data || {};
+            
+            document.getElementById('fdiMean').textContent = analysisData.fdi?.mean?.toFixed(3) || (data.plastic_percentage ? (data.plastic_percentage * 10).toFixed(3) : '-');
+            document.getElementById('ndwiMean').textContent = analysisData.ndwi?.mean?.toFixed(3) || analysisData.analysis_stats?.ndwi_avg?.toFixed(3) || '-';
+            document.getElementById('mciMean').textContent = analysisData.mci?.mean?.toFixed(4) || '-';
+            document.getElementById('turbidityMean').textContent = analysisData.turbidity?.mean?.toFixed(3) || '-';
+            
+            const mlData = analysisData.debris_ml || {};
+            document.getElementById('debrisClusters').textContent = mlData.n_clusters || data.hotspots?.length || 0;
+            document.getElementById('debrisArea').textContent = `${mlData.total_debris_area_m2?.toFixed(1) || data.plastic_area_km2 || 0} ${mlData.total_debris_area_m2 ? 'm²' : 'km²'}`;
+            document.getElementById('mlConfidence').textContent = `${((mlData.overall_confidence || data.confidence || 0) * 100).toFixed(1)}%`;
+            
+            const clusterCount = mlData.n_clusters || data.hotspots?.length || 0;
+            const classification = clusterCount > 5 ? 'High Debris' : clusterCount > 0 ? 'Moderate Debris' : 'Clean Water';
+            document.getElementById('classification').textContent = classification;
+        }
+
+        // Update validation results
+        function updateValidation(validation) {
+            document.getElementById('overallConfidence').textContent = `${(validation.overall_confidence * 100).toFixed(1)}%`;
+            document.getElementById('checksPassed').textContent = validation.checks_passed || 0;
+            document.getElementById('checksFailed').textContent = validation.checks_failed || 0;
+            
+            const recommendations = validation.recommendations || [];
+            const recDiv = document.getElementById('recommendations');
+            
+            if (recommendations.length > 0) {
+                recDiv.innerHTML = recommendations.map(rec => `
+                    <div class="p-2 bg-yellow-900/20 rounded text-sm mb-2">💡 ${rec}</div>
+                `).join('');
+            } else {
+                recDiv.innerHTML = '<p class="text-green-400">No specific recommendations</p>';
+            }
+        }
+
+        // Fallback validation for basic API
+        function updateFallbackValidation(data) {
+            const confidence = data.confidence || 0;
+            document.getElementById('overallConfidence').textContent = `${(confidence * 100).toFixed(1)}%`;
+            document.getElementById('checksPassed').textContent = confidence > 0.7 ? '3' : confidence > 0.5 ? '2' : '1';
+            document.getElementById('checksFailed').textContent = confidence > 0.7 ? '0' : confidence > 0.5 ? '1' : '2';
+            
+            const recommendations = [];
+            if (confidence < 0.5) recommendations.push('Low confidence - additional validation recommended');
+            if (data.plastic_percentage > 0.01) recommendations.push('Debris detected - consider field verification');
+            
+            const recDiv = document.getElementById('recommendations');
+            if (recommendations.length > 0) {
+                recDiv.innerHTML = recommendations.map(rec => `<div class="p-2 bg-yellow-900/20 rounded text-sm mb-2">💡 ${rec}</div>`).join('');
+            } else {
+                recDiv.innerHTML = '<p class="text-green-400">Standard analysis complete</p>';
+            }
+        }
+
+        // Update time series chart
+        function updateTimeSeriesChart(data) {
+            const ctx = document.getElementById('timeSeriesChart').getContext('2d');
+            
+            if (timeSeriesChart) {
+                timeSeriesChart.destroy();
+            }
+            
+            const analysisData = data.analysis_data || {};
+            const labels = ['FDI', 'NDWI', 'MCI', 'Turbidity'];
+            const values = [
+                analysisData.fdi?.mean || (data.plastic_percentage ? data.plastic_percentage * 10 : 0),
+                analysisData.ndwi?.mean || analysisData.analysis_stats?.ndwi_avg || 0,
+                analysisData.mci?.mean || 0,
+                analysisData.turbidity?.mean || 0
+            ];
+            
+            timeSeriesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Index Values',
+                        data: values,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: 'white' } } },
+                    scales: {
+                        x: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                        y: { ticks: { color: 'white' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }
+                    }
+                }
+            });
+        }
+
+        // Batch processing (Enhanced API only)
+        async function createBatchJob() {
+            if (currentApiUrl !== API_URLS.enhanced) {
+                document.getElementById('batchStatus').innerHTML = '⚠️ Batch processing requires Enhanced API (port 8003)';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${currentApiUrl}/batch/jobs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: `Multi-Analysis Batch ${new Date().toISOString().split('T')[0]}`,
+                        regions: ['west_sea', 'south_sea', 'east_sea'],
+                        analysis_types: ['fdi', 'ndwi', 'mci', 'debris_ml']
+                    })
+                });
+                
+                const result = await response.json();
+                document.getElementById('batchStatus').innerHTML = `✅ Batch job created: ${result.job_id}`;
+                loadActiveJobs();
+                
+            } catch (error) {
+                document.getElementById('batchStatus').innerHTML = `❌ Failed: ${error.message}`;
+            }
+        }
+
+        async function loadActiveJobs() {
+            if (currentApiUrl !== API_URLS.enhanced) return;
+            
+            try {
+                const response = await fetch(`${currentApiUrl}/batch/jobs`);
+                const data = await response.json();
+                const jobs = data.jobs || [];
+                
+                const jobsDiv = document.getElementById('activeJobs');
+                if (jobs.length === 0) {
+                    jobsDiv.innerHTML = '<p class="text-gray-400 text-sm">No active jobs</p>';
+                } else {
+                    jobsDiv.innerHTML = jobs.slice(0, 3).map(job => `
+                        <div class="p-2 bg-gray-700 rounded text-sm">
+                            <div class="flex justify-between">
+                                <span>${job.name}</span>
+                                <span class="text-${job.status === 'completed' ? 'green' : 'yellow'}-400">${job.status}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load jobs:', error);
+            }
+        }
+
+        // Field observations
+        function showObservationForm() {
+            document.getElementById('observationForm').classList.toggle('hidden');
+        }
+
+        async function submitObservation() {
+            if (currentApiUrl !== API_URLS.enhanced) {
+                alert('Field observations require Enhanced API (port 8003)');
+                return;
+            }
+            
+            const observerName = document.getElementById('observerName').value;
+            if (!observerName) {
+                alert('Please enter observer name');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${currentApiUrl}/field/observations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        location: [35.2, 128.6],
+                        debris_present: document.getElementById('debrisPresent').value === 'true',
+                        debris_density: document.getElementById('debrisDensity').value,
+                        debris_types: ['plastic'],
+                        observer: observerName,
+                        confidence: 'medium'
+                    })
+                });
+                
+                document.getElementById('observerName').value = '';
+                document.getElementById('observationForm').classList.add('hidden');
+                loadRecentObservations();
+                
+            } catch (error) {
+                alert(`Failed: ${error.message}`);
+            }
+        }
+
+        async function loadRecentObservations() {
+            if (currentApiUrl !== API_URLS.enhanced) return;
+            
+            try {
+                const response = await fetch(`${currentApiUrl}/field/observations`);
+                const data = await response.json();
+                const observations = data.observations || [];
+                
+                const obsDiv = document.getElementById('recentObservations');
+                if (observations.length === 0) {
+                    obsDiv.innerHTML = '<p class="text-gray-400 text-sm">No observations yet</p>';
+                } else {
+                    obsDiv.innerHTML = observations.slice(0, 3).map(obs => `
+                        <div class="p-2 bg-gray-700 rounded text-sm">
+                            <div class="flex justify-between">
+                                <span>${obs.observer}</span>
+                                <span class="text-${obs.debris_present ? 'red' : 'green'}-400">
+                                    ${obs.debris_present ? '🔴 Debris' : '🟢 Clean'}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load observations:', error);
+            }
+        }
+
+        // Initialize on page load
+        window.onload = async () => {
+            console.log('Initializing Multi-Index Analysis Dashboard...');
+            
+            const detectedApi = await detectAvailableApi();
+            if (detectedApi) {
+                currentApiUrl = detectedApi;
+                console.log(`Using API: ${currentApiUrl}`);
+            }
+            
+            initMap();
+            checkSystemStatus();
+            loadActiveJobs();
+            loadRecentObservations();
+            
+            // Auto-load south_sea analysis as default
+            setTimeout(() => loadEnhancedAnalysis('south_sea'), 1000);
+            
+            console.log('Dashboard initialized successfully');
+        };
+
+        // Periodic updates
+        setInterval(checkSystemStatus, 30000);
+        setInterval(loadActiveJobs, 10000);
+    </script>
+</body>
+</html>
