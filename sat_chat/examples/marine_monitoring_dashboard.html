@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>해양 폐기물 모니터링 대시보드</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #27ae60;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .metric-change {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        
+        .metric-change.increase {
+            background: #ffe4e4;
+            color: #e74c3c;
+        }
+        
+        .metric-change.decrease {
+            background: #d4f1d4;
+            color: #27ae60;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .map-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        #map {
+            height: 500px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .alerts-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            max-height: 540px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        
+        .alert-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .alert-high {
+            border-left-color: #e74c3c;
+            background: #ffe4e4;
+        }
+        
+        .alert-medium {
+            border-left-color: #f39c12;
+            background: #fff4e4;
+        }
+        
+        .alert-low {
+            border-left-color: #3498db;
+            background: #e4f4ff;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: #7f8c8d;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab.active {
+            color: #3498db;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #3498db;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        
+        .timeline {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .timeline-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+        
+        .timeline-time {
+            min-width: 80px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .badge-new {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                🌊 해양 폐기물 실시간 모니터링
+                <span class="status-indicator"></span>
+            </h1>
+            <p style="color: #7f8c8d;">마지막 업데이트: <span id="lastUpdate">2024-11-22 14:30</span></p>
+        </div>
+
+        <!-- Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">플라스틱 쓰레기</div>
+                <div class="metric-value" style="color: #e74c3c;">12.5%</div>
+                <span class="metric-change increase">▲ 2.3% (전주 대비)</span>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">전체 부유물</div>
+                <div class="metric-value" style="color: #f39c12;">28.3%</div>
+                <span class="metric-change increase">▲ 5.1% (전주 대비)</span>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">청정 해역</div>
+                <div class="metric-value" style="color: #27ae60;">71.7%</div>
+                <span class="metric-change decrease">▼ 5.1% (전주 대비)</span>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">이동 속도</div>
+                <div class="metric-value" style="color: #3498db;">3.2</div>
+                <span style="font-size: 0.9em; color: #7f8c8d;">km/h</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-grid">
+            <!-- Map -->
+            <div class="map-container">
+                <h2>🗺️ 실시간 탐지 지도</h2>
+                <div id="map"></div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e74c3c;"></div>
+                        <span>플라스틱 쓰레기</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #27ae60;"></div>
+                        <span>해조류</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #95a5a6;"></div>
+                        <span>거품</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3498db;"></div>
+                        <span>청정 해역</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="alerts-container">
+                <h2>🚨 실시간 경보</h2>
+                <div class="alert-item alert-high">
+                    <strong>⚠️ 높은 플라스틱 농도</strong>
+                    <p style="margin-top: 5px; font-size: 0.9em;">부산항 인근 12.5% 감지</p>
+                    <p style="margin-top: 5px; font-size: 0.8em; color: #666;">10분 전</p>
+                </div>
+                <div class="alert-item alert-medium">
+                    <strong>📍 빠른 이동 감지</strong>
+                    <p style="margin-top: 5px; font-size: 0.9em;">남쪽으로 5.2 km/h</p>
+                    <p style="margin-top: 5px; font-size: 0.8em; color: #666;">25분 전</p>
+                </div>
+                <div class="alert-item alert-low">
+                    <strong>ℹ️ 정기 스캔 완료</strong>
+                    <p style="margin-top: 5px; font-size: 0.9em;">영역 A-3 정상</p>
+                    <p style="margin-top: 5px; font-size: 0.8em; color: #666;">1시간 전</p>
+                </div>
+                <div class="alert-item alert-medium">
+                    <strong>🌊 조류 변화 감지</strong>
+                    <p style="margin-top: 5px; font-size: 0.9em;">동쪽 조류 강화</p>
+                    <p style="margin-top: 5px; font-size: 0.8em; color: #666;">2시간 전</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-container">
+            <div class="tabs">
+                <button class="tab active" onclick="showChart('trend')">📈 추세 분석</button>
+                <button class="tab" onclick="showChart('composition')">📊 구성 분석</button>
+                <button class="tab" onclick="showChart('prediction')">🔮 예측 모델</button>
+            </div>
+            <canvas id="chartCanvas" height="80"></canvas>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline">
+            <h2>📅 모니터링 타임라인</h2>
+            <div class="timeline-item">
+                <div class="timeline-time">14:30</div>
+                <div class="timeline-content">
+                    <strong>Sentinel-2 데이터 수신</strong>
+                    <span class="timeline-badge badge-new">NEW</span>
+                    <p style="margin-top: 5px; font-size: 0.9em; color: #7f8c8d;">5개 타일 처리 완료</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">14:15</div>
+                <div class="timeline-content">
+                    <strong>FDI 분석 완료</strong>
+                    <p style="margin-top: 5px; font-size: 0.9em; color: #7f8c8d;">부유물 지수 계산 및 분류</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">13:45</div>
+                <div class="timeline-content">
+                    <strong>현장 검증 팀 파견</strong>
+                    <p style="margin-top: 5px; font-size: 0.9em; color: #7f8c8d;">영역 B-2 샘플 수집 중</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-time">12:00</div>
+                <div class="timeline-content">
+                    <strong>정기 스캔 시작</strong>
+                    <p style="margin-top: 5px; font-size: 0.9em; color: #7f8c8d;">주간 모니터링 사이클</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>🛰️ Powered by Sentinel Hub & eo-learn | 실시간 해양 모니터링 시스템 v1.0</p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([35.1, 129.1], 11);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add debris markers
+        const debrisLocations = [
+            {lat: 35.12, lng: 129.08, type: 'plastic', intensity: 'high'},
+            {lat: 35.08, lng: 129.12, type: 'plastic', intensity: 'medium'},
+            {lat: 35.15, lng: 129.05, type: 'sargassum', intensity: 'low'},
+            {lat: 35.10, lng: 129.15, type: 'foam', intensity: 'low'},
+            {lat: 35.05, lng: 129.10, type: 'plastic', intensity: 'high'}
+        ];
+
+        debrisLocations.forEach(loc => {
+            const color = loc.type === 'plastic' ? '#e74c3c' : 
+                         loc.type === 'sargassum' ? '#27ae60' : '#95a5a6';
+            
+            const circle = L.circle([loc.lat, loc.lng], {
+                color: color,
+                fillColor: color,
+                fillOpacity: loc.intensity === 'high' ? 0.6 : 
+                            loc.intensity === 'medium' ? 0.4 : 0.2,
+                radius: loc.intensity === 'high' ? 1500 : 
+                       loc.intensity === 'medium' ? 1000 : 500
+            }).addTo(map);
+
+            circle.bindPopup(`
+                <strong>${loc.type === 'plastic' ? '플라스틱 쓰레기' : 
+                         loc.type === 'sargassum' ? '해조류' : '거품'}</strong><br>
+                강도: ${loc.intensity === 'high' ? '높음' : 
+                       loc.intensity === 'medium' ? '중간' : '낮음'}<br>
+                좌표: ${loc.lat.toFixed(3)}, ${loc.lng.toFixed(3)}
+            `);
+        });
+
+        // Chart setup
+        let currentChart = null;
+
+        function showChart(type) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Destroy existing chart
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            
+            if (type === 'trend') {
+                currentChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['1주 전', '6일 전', '5일 전', '4일 전', '3일 전', '2일 전', '1일 전', '오늘'],
+                        datasets: [{
+                            label: '플라스틱 쓰레기 (%)',
+                            data: [8.2, 8.5, 9.1, 8.8, 10.2, 10.8, 11.5, 12.5],
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            tension: 0.4
+                        }, {
+                            label: '전체 부유물 (%)',
+                            data: [22.1, 23.2, 24.5, 23.8, 25.6, 26.2, 27.1, 28.3],
+                            borderColor: '#f39c12',
+                            backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
+            } else if (type === 'composition') {
+                currentChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['청정 해역', '플라스틱 쓰레기', '해조류', '거품', '탁한 물'],
+                        datasets: [{
+                            data: [71.7, 12.5, 8.3, 4.5, 3.0],
+                            backgroundColor: [
+                                '#3498db',
+                                '#e74c3c',
+                                '#27ae60',
+                                '#95a5a6',
+                                '#f39c12'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                            }
+                        }
+                    }
+                });
+            } else if (type === 'prediction') {
+                currentChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['내일', '모레', '3일 후', '4일 후', '5일 후'],
+                        datasets: [{
+                            label: '예상 플라스틱 농도 (%)',
+                            data: [13.2, 12.8, 11.5, 10.2, 9.8],
+                            backgroundColor: 'rgba(231, 76, 60, 0.6)',
+                            borderColor: '#e74c3c',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 20
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize with trend chart
+        showChart('trend');
+
+        // Update last update time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('lastUpdate').textContent = timeString;
+        }
+
+        // Update every minute
+        setInterval(updateTime, 60000);
+        updateTime();
+
+        // Simulate real-time updates
+        setInterval(() => {
+            // Add animation to status indicator
+            const indicator = document.querySelector('.status-indicator');
+            indicator.style.background = '#f39c12';
+            setTimeout(() => {
+                indicator.style.background = '#27ae60';
+            }, 1000);
+        }, 5000);
+    </script>
+</body>
+</html>

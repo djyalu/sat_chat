@@ -222,4 +222,9 @@ celery -A src.satchat.worker inspect active
 
 # Check API health
 curl http://localhost:8000/health
-```
+```## 체크포인트 1 - 2025-08-22 20:38
+- 내용: Complete SatChat marine debris monitoring system with full UI and local testing environment
+- 상태: 활성
+- Git 브랜치: main
+- Git 커밋: 9c9e29f3
+

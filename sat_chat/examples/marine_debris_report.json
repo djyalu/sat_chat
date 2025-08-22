@@ -1,0 +1,21 @@
+{
+  "monitoring_date": "2025-08-22T22:44:34.745059",
+  "roi": {
+    "name": "Busan Port Area",
+    "bbox": [
+      129.0,
+      35.0,
+      129.2,
+      35.2
+    ],
+    "type": "coastal"
+  },
+  "summary": {
+    "plastic_debris_percentage": 9.339752197265625,
+    "sargassum_percentage": 4.0483856201171875,
+    "foam_percentage": 0.0,
+    "clear_water_percentage": 13.8604736328125
+  },
+  "alerts": [],
+  "recommendations": []
+}
