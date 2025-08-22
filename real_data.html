@@ -218,6 +218,13 @@
         </div>
 
         <div class="mt-6 bg-gray-800 rounded-lg p-4">
+            <h3 class="text-lg font-bold mb-2">📈 다중 지표 차트</h3>
+            <div class="bg-gray-700 rounded p-4" style="height: 300px;">
+                <canvas id="timeSeriesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-gray-800 rounded-lg p-4">
             <h3 class="text-lg font-bold mb-2">🔍 핫스팟 상세 정보</h3>
             <div id="hotspotDetails" class="space-y-2">
                 <p class="text-gray-400">핫스팟 분석 대기중...</p>
@@ -322,10 +329,12 @@
             }
         }
 
-        // 시각화 업데이트
+        // 시각화 업데이트 (안전한 요소 체크 포함)
         function updateVisualizations(data) {
-            if (data.image_rgb) {
-                document.getElementById('rgbContainer').innerHTML = `
+            // RGB 이미지
+            const rgbEl = document.getElementById('rgbContainer') || document.getElementById('imageContainer');
+            if (rgbEl && data.image_rgb) {
+                rgbEl.innerHTML = `
                     <div class="relative">
                         <img src="data:image/png;base64,${data.image_rgb}" alt="Sentinel-2 RGB" class="w-full h-auto rounded">
                         <div class="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-xs">RGB</div>
@@ -333,8 +342,10 @@
                 `;
             }
             
-            if (data.image_ndvi) {
-                document.getElementById('ndviContainer').innerHTML = `
+            // NDVI
+            const ndviEl = document.getElementById('ndviContainer');
+            if (ndviEl && data.image_ndvi) {
+                ndviEl.innerHTML = `
                     <div class="relative">
                         <img src="data:image/png;base64,${data.image_ndvi}" alt="NDVI Analysis" class="w-full h-auto rounded">
                         <div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs">NDVI</div>
@@ -342,8 +353,10 @@
                 `;
             }
             
-            if (data.image_ndwi) {
-                document.getElementById('ndwiContainer').innerHTML = `
+            // NDWI
+            const ndwiEl = document.getElementById('ndwiContainer');
+            if (ndwiEl && data.image_ndwi) {
+                ndwiEl.innerHTML = `
                     <div class="relative">
                         <img src="data:image/png;base64,${data.image_ndwi}" alt="NDWI Analysis" class="w-full h-auto rounded">
                         <div class="absolute top-2 right-2 bg-cyan-600 text-white px-2 py-1 rounded text-xs">NDWI</div>
@@ -351,8 +364,10 @@
                 `;
             }
             
-            if (data.image_depth) {
-                document.getElementById('depthContainer').innerHTML = `
+            // 수심 분석
+            const depthEl = document.getElementById('depthContainer');
+            if (depthEl && data.image_depth) {
+                depthEl.innerHTML = `
                     <div class="relative">
                         <img src="data:image/png;base64,${data.image_depth}" alt="Depth Analysis" class="w-full h-auto rounded">
                         <div class="absolute top-2 right-2 bg-cyan-600 text-white px-2 py-1 rounded text-xs">DEPTH</div>
@@ -360,8 +375,10 @@
                 `;
             }
             
-            if (data.image_chlorophyll) {
-                document.getElementById('chlorophyllContainer').innerHTML = `
+            // 클로로필 분석
+            const chlorophyllEl = document.getElementById('chlorophyllContainer');
+            if (chlorophyllEl && data.image_chlorophyll) {
+                chlorophyllEl.innerHTML = `
                     <div class="relative">
                         <img src="data:image/png;base64,${data.image_chlorophyll}" alt="Chlorophyll Analysis" class="w-full h-auto rounded">
                         <div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs">CHLOROPHYLL</div>
@@ -369,8 +386,10 @@
                 `;
             }
             
-            if (data.heatmap) {
-                document.getElementById('heatmapContainer').innerHTML = `
+            // 히트맵
+            const heatmapEl = document.getElementById('heatmapContainer');
+            if (heatmapEl && data.heatmap) {
+                heatmapEl.innerHTML = `
                     <div class="relative">
                         <img src="data:image/png;base64,${data.heatmap}" alt="Heatmap" class="w-full h-auto rounded">
                         <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs">HEATMAP</div>
@@ -379,36 +398,76 @@
             }
         }
 
-        // 통계 업데이트
+        // 통계 업데이트 (안전한 요소 체크 포함)
         function updateStatistics(data) {
             const analysisData = data.analysis_data || {};
+            const stats = data.analysis_stats || {};
             
+            // 기본 통계 업데이트
+            const ndviEl = document.getElementById('ndviAvg');
+            if (ndviEl && stats.ndvi_avg !== undefined) {
+                ndviEl.textContent = stats.ndvi_avg.toFixed(3);
+            }
+            
+            const ndwiEl = document.getElementById('ndwiAvg');
+            if (ndwiEl && stats.ndwi_avg !== undefined) {
+                ndwiEl.textContent = stats.ndwi_avg.toFixed(3);
+            }
+            
+            const depthEl = document.getElementById('depthAvg');
+            if (depthEl && stats.depth_avg !== undefined) {
+                depthEl.textContent = stats.depth_avg.toFixed(3);
+            }
+            
+            const chlorophyllEl = document.getElementById('chlorophyllAvg');
+            if (chlorophyllEl && stats.chlorophyll_avg !== undefined) {
+                chlorophyllEl.textContent = stats.chlorophyll_avg.toFixed(3);
+            }
+            
+            const confidenceEl = document.getElementById('confidence');
+            if (confidenceEl && data.confidence !== undefined) {
+                confidenceEl.textContent = `${(data.confidence * 100).toFixed(0)}%`;
+            }
+            
+            // 고급 통계 (있는 경우에만)
             const fdiEl = document.getElementById('fdiMean');
-            if (fdiEl) fdiEl.textContent = analysisData.fdi?.mean?.toFixed(3) || (data.plastic_percentage ? (data.plastic_percentage * 10).toFixed(3) : '-');
-            
-            const ndwiEl = document.getElementById('ndwiMean');
-            if (ndwiEl) ndwiEl.textContent = analysisData.ndwi?.mean?.toFixed(3) || analysisData.analysis_stats?.ndwi_avg?.toFixed(3) || '-';
+            if (fdiEl) {
+                fdiEl.textContent = analysisData.fdi?.mean?.toFixed(3) || (data.plastic_percentage ? (data.plastic_percentage * 10).toFixed(3) : '-');
+            }
             
             const mciEl = document.getElementById('mciMean');
-            if (mciEl) mciEl.textContent = analysisData.mci?.mean?.toFixed(4) || '-';
+            if (mciEl) {
+                mciEl.textContent = analysisData.mci?.mean?.toFixed(4) || '-';
+            }
             
             const turbidityEl = document.getElementById('turbidityMean');
-            if (turbidityEl) turbidityEl.textContent = analysisData.turbidity?.mean?.toFixed(3) || '-';
+            if (turbidityEl) {
+                turbidityEl.textContent = analysisData.turbidity?.mean?.toFixed(3) || '-';
+            }
             
+            // ML 데이터
             const mlData = analysisData.debris_ml || {};
             const clustersEl = document.getElementById('debrisClusters');
-            if (clustersEl) clustersEl.textContent = mlData.n_clusters || data.hotspots?.length || 0;
+            if (clustersEl) {
+                clustersEl.textContent = mlData.n_clusters || data.hotspots?.length || 0;
+            }
             
             const areaEl = document.getElementById('debrisArea');
-            if (areaEl) areaEl.textContent = `${mlData.total_debris_area_m2?.toFixed(1) || data.plastic_area_km2 || 0} ${mlData.total_debris_area_m2 ? 'm²' : 'km²'}`;
+            if (areaEl) {
+                areaEl.textContent = `${mlData.total_debris_area_m2?.toFixed(1) || data.plastic_area_km2 || 0} ${mlData.total_debris_area_m2 ? 'm²' : 'km²'}`;
+            }
             
             const mlConfEl = document.getElementById('mlConfidence');
-            if (mlConfEl) mlConfEl.textContent = `${((mlData.overall_confidence || data.confidence || 0) * 100).toFixed(1)}%`;
+            if (mlConfEl) {
+                mlConfEl.textContent = `${((mlData.overall_confidence || data.confidence || 0) * 100).toFixed(1)}%`;
+            }
             
             const clusterCount = mlData.n_clusters || data.hotspots?.length || 0;
             const classification = clusterCount > 5 ? 'High Debris' : clusterCount > 0 ? 'Moderate Debris' : 'Clean Water';
             const classEl = document.getElementById('classification');
-            if (classEl) classEl.textContent = classification;
+            if (classEl) {
+                classEl.textContent = classification;
+            }
         }
 
         // 시계열 차트 업데이트
@@ -459,7 +518,9 @@
             const regionNames = {
                 'west_sea': '서해 (인천 근해)',
                 'south_sea': '남해 (거제도 근해)', 
-                'east_sea': '동해 (울산 근해)'
+                'east_sea': '동해 (울산 근해)',
+                'busan_port': '부산항 일대',
+                'incheon_port': '인천항 일대'
             };
 
             // 상태 업데이트
@@ -475,15 +536,42 @@
                 console.log(`Fetching REAL data for ${region}...`);
                 const startTime = Date.now();
                 
-                const response = await fetch(`${API_URL}/region/${region}`);
+                let response, data;
+                
+                if (currentApiUrl === API_URLS.enhanced) {
+                    response = await fetch(
+                        `${currentApiUrl}/enhanced/region/${region}?` + 
+                        new URLSearchParams({
+                            analysis_types: 'fdi,ndwi,mci,turbidity,debris_ml',
+                            validation_level: 'high',
+                            include_tiles: 'true'
+                        })
+                    );
+                } else {
+                    response = await fetch(`${currentApiUrl}/region/${region}`);
+                }
+                
                 const loadTime = ((Date.now() - startTime) / 1000).toFixed(1);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const data = await response.json();
+                data = await response.json();
                 console.log('Received REAL satellite data:', data);
+
+                // 시각화 및 통계 업데이트
+                updateVisualizations(data);
+                updateStatistics(data);
+                updateTimeSeriesChart(data);
+                
+                // 지도 중심 업데이트
+                if (map && data.bbox && data.bbox.length >= 4) {
+                    const [lon1, lat1, lon2, lat2] = data.bbox;
+                    const centerLat = (lat1 + lat2) / 2;
+                    const centerLon = (lon1 + lon2) / 2;
+                    map.setView([centerLat, centerLon], 12);
+                }
 
                 // 성공 상태
                 document.getElementById('status').innerHTML = `
@@ -498,22 +586,7 @@
                     </div>
                 `;
 
-                // 6가지 분석 이미지 표시
-                displayAnalysisImage('imageContainer', data.image_rgb, 'RGB 트루컬러', 'green');
-                displayAnalysisImage('ndviContainer', data.image_ndvi, 'NDVI 식생분석', 'green');
-                displayAnalysisImage('ndwiContainer', data.image_ndwi, 'NDWI 수질분석', 'blue');
-                displayAnalysisImage('depthContainer', data.image_depth, '수심분석', 'cyan');
-                displayAnalysisImage('chlorophyllContainer', data.image_chlorophyll, '클로로필분석', 'emerald');
-                displayAnalysisImage('heatmapContainer', data.heatmap, '종합 히트맵', 'red');
-
-                // 다중 분석 통계 업데이트
-                if (data.analysis_stats) {
-                    document.getElementById('ndviAvg').textContent = data.analysis_stats.ndvi_avg.toFixed(3);
-                    document.getElementById('ndwiAvg').textContent = data.analysis_stats.ndwi_avg.toFixed(3);
-                    document.getElementById('depthAvg').textContent = data.analysis_stats.depth_avg.toFixed(3);
-                    document.getElementById('chlorophyllAvg').textContent = data.analysis_stats.chlorophyll_avg.toFixed(3);
-                }
-                document.getElementById('confidence').textContent = `${(data.confidence * 100).toFixed(0)}%`;
+                // 이미지와 통계는 updateVisualizations과 updateStatistics에서 처리됨
 
                 // 종합 분석 결과 및 해석 가이드
                 const stats = data.analysis_stats;
@@ -609,20 +682,27 @@
             }
         }
 
-        // 페이지 로드시 API 체크
+        // 페이지 로드시 초기화
         window.onload = async () => {
+            console.log('Initializing Enhanced SatChat Dashboard...');
+            
+            const detectedApi = await detectAvailableApi();
+            if (detectedApi) {
+                currentApiUrl = detectedApi;
+                console.log(`Using API: ${currentApiUrl}`);
+            }
+            
+            initMap();
+            checkSystemStatus();
+            
+            // 자동으로 남해 데이터 로드
             try {
-                const response = await fetch(`${API_URL}/`);
-                const data = await response.json();
-                console.log('Real API Status:', data);
-                
-                // 자동으로 남해 데이터 로드
-                loadRegion('south_sea');
+                await loadRegion('south_sea');
             } catch (error) {
-                console.error('Real API not available:', error);
+                console.error('Initial data load failed:', error);
                 document.getElementById('status').innerHTML = `
                     <div class="text-red-400">
-                        ⚠️ 실제 데이터 API 서버에 연결할 수 없습니다 (포트 8002)
+                        ⚠️ 실제 데이터 API 서버에 연결할 수 없습니다. 포트 8002 또는 8003을 확인하세요.
                     </div>
                 `;
             }
