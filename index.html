@@ -21,11 +21,77 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
-        const API_URL = 'http://localhost:8000';
+        // GitHub Pages에서는 API 서버가 없으므로 데모 데이터 사용
+        const API_URL = 'demo'; // Demo mode for GitHub Pages
 
-        // API Service
+        // API Service with demo data for GitHub Pages
         const api = {
             get: async (endpoint) => {
+                // Demo data for GitHub Pages
+                if (API_URL === 'demo') {
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+                    
+                    if (endpoint === '/api/v1/statistics') {
+                        return {
+                            total_detections: 1247,
+                            active_alerts: 3,
+                            monitored_area: 2450,
+                            detection_rate: 94.2
+                        };
+                    }
+                    
+                    if (endpoint === '/api/v1/detections') {
+                        return [
+                            {
+                                id: 1,
+                                debris_type: '플라스틱',
+                                latitude: 35.1796,
+                                longitude: 129.0756,
+                                confidence: 0.95,
+                                detection_time: '2분 전'
+                            },
+                            {
+                                id: 2,
+                                debris_type: '어망',
+                                latitude: 33.5563,
+                                longitude: 126.7958,
+                                confidence: 0.87,
+                                detection_time: '15분 전'
+                            },
+                            {
+                                id: 3,
+                                debris_type: '부표',
+                                latitude: 37.4563,
+                                longitude: 124.7958,
+                                confidence: 0.78,
+                                detection_time: '1시간 전'
+                            }
+                        ];
+                    }
+                    
+                    if (endpoint === '/api/v1/alerts') {
+                        return [
+                            {
+                                id: 1,
+                                title: '긴급 알림',
+                                message: '부산항 인근에서 대량 플라스틱 폐기물 탐지됨 (95.2% 확신도)',
+                                priority: 'high',
+                                created_at: '2분 전'
+                            },
+                            {
+                                id: 2,
+                                title: '주의 알림',
+                                message: '제주 남쪽 해역에서 어망 폐기물 확인 필요',
+                                priority: 'medium',
+                                created_at: '15분 전'
+                            }
+                        ];
+                    }
+                    
+                    return null;
+                }
+                
+                // Real API call for local development
                 try {
                     const response = await fetch(API_URL + endpoint);
                     return await response.json();
@@ -396,9 +462,13 @@
 
             useEffect(() => {
                 // Check server status
-                fetch(API_URL + '/')
-                    .then(res => res.ok ? setServerStatus('online') : setServerStatus('offline'))
-                    .catch(() => setServerStatus('offline'));
+                if (API_URL === 'demo') {
+                    setServerStatus('demo');
+                } else {
+                    fetch(API_URL + '/')
+                        .then(res => res.ok ? setServerStatus('online') : setServerStatus('offline'))
+                        .catch(() => setServerStatus('offline'));
+                }
             }, []);
 
             return (
@@ -408,10 +478,12 @@
                     {/* Server Status Bar */}
                     <div className={`px-4 py-2 text-center text-sm ${
                         serverStatus === 'online' ? 'bg-green-500 text-white' :
+                        serverStatus === 'demo' ? 'bg-blue-500 text-white' :
                         serverStatus === 'offline' ? 'bg-red-500 text-white' :
                         'bg-yellow-500 text-white'
                     }`}>
                         {serverStatus === 'online' ? '✅ 서버 연결됨' :
+                         serverStatus === 'demo' ? '🌐 데모 모드 (GitHub Pages)' :
                          serverStatus === 'offline' ? '❌ 서버 오프라인' :
                          '⏳ 서버 확인 중...'}
                     </div>
