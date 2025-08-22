@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛰️ SatChat - 실제 Sentinel-2 데이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-4">
+        <header class="bg-gray-800 rounded-lg p-4 mb-6">
+            <h1 class="text-3xl font-bold">🛰️ SatChat - 실제 Sentinel-2 위성 데이터</h1>
+            <p class="text-gray-400 mt-2">한국 해역 실시간 해양 플라스틱 모니터링</p>
+            <p class="text-green-400 text-sm mt-1">✅ 100% 실제 위성 데이터 사용</p>
+        </header>
+
+        <div class="flex gap-2 mb-6">
+            <button onclick="loadRegion('west_sea')" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
+                🌊 서해 (인천 근해)
+            </button>
+            <button onclick="loadRegion('south_sea')" class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg">
+                🌊 남해 (거제도 근해)
+            </button>
+            <button onclick="loadRegion('east_sea')" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg">
+                🌊 동해 (울산 근해)
+            </button>
+        </div>
+
+        <div id="status" class="bg-gray-800 rounded-lg p-4 mb-6">
+            <p>지역을 선택하여 실제 위성 데이터를 확인하세요...</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h2 class="text-xl font-bold mb-4">🛰️ Sentinel-2 위성 이미지</h2>
+                <div id="imageContainer" class="bg-gray-700 rounded p-4 min-h-[400px] flex items-center justify-center">
+                    <p class="text-gray-400">실제 위성 데이터 로딩 대기중...</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">* 실제 Sentinel-2 L2A 데이터 (10m 해상도)</p>
+            </div>
+
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h2 class="text-xl font-bold mb-4">🔥 플라스틱 오염 히트맵</h2>
+                <div id="heatmapContainer" class="bg-gray-700 rounded p-4 min-h-[400px] flex items-center justify-center">
+                    <p class="text-gray-400">FDI 알고리즘 분석 대기중...</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">* FDI (Floating Debris Index) 기반 탐지</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-4 mt-6">
+            <div class="bg-gray-800 rounded-lg p-4 text-center">
+                <p class="text-gray-400 text-sm">플라스틱 오염도</p>
+                <p id="plasticPercentage" class="text-2xl font-bold text-red-400">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 text-center">
+                <p class="text-gray-400 text-sm">예상 오염 면적</p>
+                <p id="plasticArea" class="text-2xl font-bold text-orange-400">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 text-center">
+                <p class="text-gray-400 text-sm">탐지 신뢰도</p>
+                <p id="confidence" class="text-2xl font-bold text-blue-400">-</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 text-center">
+                <p class="text-gray-400 text-sm">핫스팟 개수</p>
+                <p id="hotspots" class="text-2xl font-bold text-purple-400">-</p>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-gray-800 rounded-lg p-4">
+            <h3 class="text-lg font-bold mb-2">📊 실시간 분석 결과</h3>
+            <div id="analysis" class="text-gray-400">
+                지역을 선택하면 상세 분석 결과가 표시됩니다...
+            </div>
+        </div>
+
+        <div class="mt-6 bg-gray-800 rounded-lg p-4">
+            <h3 class="text-lg font-bold mb-2">🔍 핫스팟 상세 정보</h3>
+            <div id="hotspotDetails" class="space-y-2">
+                <p class="text-gray-400">핫스팟 분석 대기중...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8002';  // 새로운 실제 데이터 API
+        let currentRegion = null;
+
+        async function loadRegion(region) {
+            currentRegion = region;
+            const regionNames = {
+                'west_sea': '서해 (인천 근해)',
+                'south_sea': '남해 (거제도 근해)', 
+                'east_sea': '동해 (울산 근해)'
+            };
+
+            // 상태 업데이트
+            document.getElementById('status').innerHTML = `
+                <div class="flex items-center">
+                    <div class="loading w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full mr-3"></div>
+                    <span class="text-green-400">${regionNames[region]} 실제 위성 데이터 다운로드 중...</span>
+                    <span class="text-gray-500 text-sm ml-2">(10-30초 소요)</span>
+                </div>
+            `;
+
+            try {
+                console.log(`Fetching REAL data for ${region}...`);
+                const startTime = Date.now();
+                
+                const response = await fetch(`${API_URL}/region/${region}`);
+                const loadTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Received REAL satellite data:', data);
+
+                // 성공 상태
+                document.getElementById('status').innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="text-green-400">✅ ${regionNames[region]} 실제 위성 데이터 수신 완료</span>
+                            <span class="text-gray-400 text-sm ml-4">소요시간: ${loadTime}초</span>
+                        </div>
+                        <span class="text-xs text-green-300 bg-green-900 px-2 py-1 rounded">
+                            ${data.data_source || 'Sentinel-2 L2A'}
+                        </span>
+                    </div>
+                `;
+
+                // 실제 위성 이미지 표시
+                if (data.image_rgb) {
+                    document.getElementById('imageContainer').innerHTML = `
+                        <div class="relative">
+                            <img src="data:image/png;base64,${data.image_rgb}" 
+                                 alt="Real Sentinel-2 Image" 
+                                 class="w-full h-auto rounded border border-green-500"
+                                 onload="console.log('Real satellite image loaded!')"
+                                 onerror="console.error('Real image load failed')">
+                            <div class="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs">
+                                REAL DATA
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 히트맵 표시
+                if (data.heatmap) {
+                    document.getElementById('heatmapContainer').innerHTML = `
+                        <div class="relative">
+                            <img src="data:image/png;base64,${data.heatmap}" 
+                                 alt="Pollution Heatmap" 
+                                 class="w-full h-auto rounded border border-red-500">
+                            <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs">
+                                FDI ANALYSIS
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 통계 업데이트
+                const plasticPct = (data.plastic_percentage * 100).toFixed(3);
+                document.getElementById('plasticPercentage').textContent = `${plasticPct}%`;
+                document.getElementById('plasticArea').textContent = `${data.plastic_area_km2?.toFixed(1)} km²`;
+                document.getElementById('confidence').textContent = `${(data.confidence * 100).toFixed(1)}%`;
+                document.getElementById('hotspots').textContent = `${data.hotspots?.length || 0}개`;
+
+                // 분석 결과
+                const analysisHtml = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>위성 데이터:</span>
+                            <span class="text-green-400">${data.data_source}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>분석 시간:</span>
+                            <span class="text-blue-400">${new Date(data.timestamp).toLocaleString('ko-KR')}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>플라스틱 탐지:</span>
+                            <span class="${plasticPct > 0.1 ? 'text-red-400' : 'text-green-400'}">
+                                ${plasticPct}% (${plasticPct > 0.1 ? '오염 감지' : '깨끗한 상태'})
+                            </span>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('analysis').innerHTML = analysisHtml;
+
+                // 핫스팟 상세 정보
+                if (data.hotspots && data.hotspots.length > 0) {
+                    const hotspotsHtml = data.hotspots.slice(0, 5).map((h, i) => `
+                        <div class="bg-red-900/20 border-l-4 border-red-500 p-3 rounded">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-semibold text-red-400">핫스팟 #${i+1}</p>
+                                    <p class="text-sm text-gray-400">
+                                        📍 ${h.lat.toFixed(4)}°N, ${h.lon.toFixed(4)}°E
+                                    </p>
+                                    <p class="text-sm text-gray-400">
+                                        🔥 오염 강도: ${(h.intensity * 100).toFixed(1)}%
+                                    </p>
+                                </div>
+                                <span class="text-xs bg-red-600 text-white px-2 py-1 rounded">
+                                    HIGH
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('hotspotDetails').innerHTML = hotspotsHtml;
+                } else {
+                    document.getElementById('hotspotDetails').innerHTML = `
+                        <div class="bg-green-900/20 border-l-4 border-green-500 p-3 rounded text-center">
+                            <p class="text-green-400 font-semibold">✅ 플라스틱 오염이 감지되지 않았습니다</p>
+                            <p class="text-sm text-gray-400 mt-1">이 지역은 현재 깨끗한 상태입니다</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error loading REAL data:', error);
+                
+                document.getElementById('status').innerHTML = `
+                    <div class="text-red-400">
+                        ❌ 실제 데이터 로딩 실패: ${error.message}
+                    </div>
+                `;
+
+                document.getElementById('imageContainer').innerHTML = `
+                    <div class="text-center">
+                        <p class="text-red-400 mb-2">실제 위성 데이터 로딩 실패</p>
+                        <p class="text-sm text-gray-500">${error.message}</p>
+                        <p class="text-xs text-gray-600 mt-2">API 서버(포트 8002) 상태를 확인하세요</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 페이지 로드시 API 체크
+        window.onload = async () => {
+            try {
+                const response = await fetch(`${API_URL}/`);
+                const data = await response.json();
+                console.log('Real API Status:', data);
+                
+                // 자동으로 남해 데이터 로드
+                loadRegion('south_sea');
+            } catch (error) {
+                console.error('Real API not available:', error);
+                document.getElementById('status').innerHTML = `
+                    <div class="text-red-400">
+                        ⚠️ 실제 데이터 API 서버에 연결할 수 없습니다 (포트 8002)
+                    </div>
+                `;
+            }
+        };
+    </script>
+</body>
+</html>
