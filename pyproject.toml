@@ -1,0 +1,85 @@
+[tool.poetry]
+name = "satchat"
+version = "0.1.0"
+description = "SatChat - 텔레픽스 해상 폐기물 모니터링 시스템"
+authors = ["Telefix Team <dev@telefix.co.kr>"]
+readme = "README.md"
+packages = [{include = "satchat", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.104.0"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
+pydantic = "^2.0"
+pydantic-settings = "^2.0"
+sqlalchemy = "^2.0"
+alembic = "^1.12"
+psycopg2-binary = "^2.9"
+redis = "^5.0"
+celery = {extras = ["redis"], version = "^5.3"}
+rasterio = "^1.3"
+opencv-python = "^4.8"
+numpy = "^1.24"
+scipy = "^1.11"
+pandas = "^2.1"
+geopandas = "^0.14"
+shapely = "^2.0"
+torch = "^2.1"
+torchvision = "^0.16"
+transformers = "^4.35"
+scikit-learn = "^1.3"
+scikit-image = "^0.22"
+pillow = "^10.0"
+sentinelsat = "^1.2"
+planetsdk = "^2.0"
+boto3 = "^1.29"
+minio = "^7.2"
+influxdb-client = "^1.38"
+prometheus-client = "^0.19"
+aiohttp = "^3.9"
+aiofiles = "^23.2"
+python-multipart = "^0.0.6"
+python-jose = {extras = ["cryptography"], version = "^3.3"}
+passlib = {extras = ["bcrypt"], version = "^1.7"}
+python-dotenv = "^1.0"
+loguru = "^0.7"
+click = "^8.1"
+rich = "^13.7"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+pytest-asyncio = "^0.21"
+pytest-cov = "^4.1"
+black = "^23.11"
+ruff = "^0.1"
+mypy = "^1.7"
+pre-commit = "^3.5"
+ipython = "^8.17"
+jupyter = "^1.0"
+nbconvert = "^7.11"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=src/satchat --cov-report=html --cov-report=term"
