@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: satchat-lite
+    name: satchat-client-proxy
     env: python
-    buildCommand: pip install -r requirements-lite.txt
-    startCommand: python satchat_lite.py
+    buildCommand: pip install -r requirements-minimal.txt
+    startCommand: python minimal_proxy_api.py
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
