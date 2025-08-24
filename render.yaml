@@ -1,13 +1,13 @@
 services:
   - type: web
-    name: sat-chat-api
+    name: satchat-lite
     env: python
-    buildCommand: pip install -r requirements-enhanced.txt
-    startCommand: python enhanced_simple_api.py
+    buildCommand: pip install -r requirements-lite.txt
+    startCommand: python satchat_lite.py
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
-      - key: SENTINEL_HUB_CLIENT_ID
-        value: "a02dcc3a-0d6c-408d-b796-c72cf8ad97fa"
-      - key: SENTINEL_HUB_CLIENT_SECRET
-        value: "xHUnjXzw99EyY0JEofxCn2ScBqCPmkoY"
+      - key: ENVIRONMENT
+        value: "production"
+      - key: DEBUG
+        value: "false"

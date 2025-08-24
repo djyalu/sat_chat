@@ -1,0 +1,11 @@
+# SatChat Lite - Minimal Dependencies
+# Ultra-lightweight requirements for resource-constrained deployment
+
+fastapi==0.104.1
+uvicorn==0.24.0
+python-dotenv==1.0.0
+pydantic==2.4.2
+psutil==5.9.6
+
+# Optional: Remove if not needed
+# python-multipart==0.0.6
