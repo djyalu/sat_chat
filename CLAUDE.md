@@ -291,7 +291,7 @@ curl http://localhost:8000/health
 
 ## 체크포인트 11 - 2025-08-24 12:56
 - 내용: Render 배포 이슈 해결 - Python 3.11 설정 및 데모 모드 추가
-- 상태: 활성
+- 상태: 완료
 - Git 브랜치: main
 - Git 커밋: 58914d8
 - 주요 수정사항:
@@ -302,4 +302,16 @@ curl http://localhost:8000/health
   - health_check.py 배포 모니터링 도구 추가
   - 로컬 테스트 완료 (정상 작동)
   - Render 환경 변수 설정 대기 중
+
+## 체크포인트 12 - 2025-08-24 13:25
+- 내용: Poetry 자동 감지 문제 해결 및 Render 배포 최종 수정
+- 상태: 활성
+- Git 브랜치: main
+- Git 커밋: 5f1735f
+- 주요 수정사항:
+  - pyproject.toml 더미 파일 생성 (Poetry 오류 방지)
+  - render.yaml pip 명시적 사용 설정
+  - PORT 환경변수 기본값 설정 (10000)
+  - 배포 자동화 완전 구현
+  - /ccsave 명령 시 자동 Render 배포
 
