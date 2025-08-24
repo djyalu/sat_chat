@@ -299,11 +299,12 @@
     </div>
 
     <script>
-        // API Configuration - Production and Development
+        // API Configuration - Enhanced Full-Stack Production
         const API_URLS = {
-            production: 'https://sat-chat.onrender.com',
-            enhanced: 'http://localhost:8003', 
-            fallback: 'http://localhost:8002'
+            production: 'https://sat-chat.onrender.com',  // Enhanced API
+            enhanced: 'https://sat-chat.onrender.com',    // Same as production 
+            fallback: 'http://localhost:8000',            // Local development
+            local: 'http://localhost:8000'
         };
         
         let currentApiUrl = API_URLS.enhanced;
@@ -312,45 +313,40 @@
         let currentTileLayer = null;
         let timeSeriesChart = null;
 
-        // API Detection - Production First Strategy
+        // API Detection - Enhanced Full-Stack Strategy  
         async function detectAvailableApi() {
-            // 1. Try Production API (Render) first
+            // 1. Try Enhanced Production API (Render) first
             try {
-                const response = await fetch(`${API_URLS.production}/`, {
+                const response = await fetch(`${API_URLS.production}/health`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' }
                 });
                 if (response.ok) {
-                    console.log('🌐 Production API (Render) is available');
-                    return API_URLS.production;
+                    const healthData = await response.json();
+                    if (healthData.status === 'healthy') {
+                        console.log('🚀 Enhanced Production API (Full-Stack) is available');
+                        console.log('Features: Multi-Index Analysis + ML Segmentation + Memory DB');
+                        return API_URLS.production;
+                    }
                 }
             } catch (error) {
-                console.log('Production API not available, trying local...');
+                console.log('Enhanced Production API not available, trying fallback...');
             }
             
-            // 2. Try Enhanced API (localhost)
+            // 2. Try Local Development API
             try {
-                const response = await fetch(`${API_URLS.enhanced}/system/status`);
+                const response = await fetch(`${API_URLS.fallback}/health`);
                 if (response.ok) {
-                    console.log('🔬 Enhanced API detected on port 8003');
-                    return API_URLS.enhanced;
-                }
-            } catch (error) {
-                console.log('Enhanced API not available, trying fallback...');
-            }
-            
-            // 3. Try Fallback API (localhost)
-            try {
-                const response = await fetch(`${API_URLS.fallback}/`);
-                if (response.ok) {
-                    console.log('📡 Real Sentinel API detected on port 8002');
+                    console.log('🔧 Local Development API detected');
                     return API_URLS.fallback;
                 }
             } catch (error) {
-                console.log('Fallback API not available');
+                console.log('Local API not available');
             }
             
-            return null;
+            // 3. Use Production as fallback even if health check failed
+            console.log('⚠️ Using Production API as fallback');
+            return API_URLS.production;
         }
 
         // Initialize map

@@ -1,0 +1,38 @@
+# SatChat Enhanced API - 메모리 최적화된 풀스택 의존성
+# 512MB Render 제약 내에서 최대 기능 구현
+
+# Core FastAPI
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-dotenv==1.0.0
+python-multipart==0.0.6
+
+# Scientific Computing (경량 버전)
+numpy==1.24.4
+scikit-learn==1.3.2
+opencv-python-headless==4.8.1.78  # GUI 없는 경량 버전
+pillow==10.1.0
+
+# Sentinel Hub
+sentinelhub==3.9.1
+requests==2.31.0
+
+# Visualization (matplotlib 없이 경량화)
+matplotlib==3.7.3
+
+# Data handling
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# HTTP client
+httpx==0.25.1
+
+# Database (SQLite - 메모리 최적화)
+# SQLite는 Python 기본 포함
+
+# Math & Stats
+scipy==1.11.4
+
+# Security (lightweight)
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.6
