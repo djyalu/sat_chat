@@ -278,13 +278,14 @@ curl http://localhost:8000/health
 
 ## 체크포인트 10 - 2025-08-24 12:32
 - 내용: 완전 자동 배포 시스템 구축 - GitHub-Render 통합 CI/CD 파이프라인
-- 상태: 활성
+- 상태: 완료
 - Git 브랜치: main
-- Git 커밋: 464ad41
+- Git 커밋: 2826d5d
 - 주요 기능:
   - 자동 배포 스크립트 (deploy.sh, auto_deploy.py)
   - GitHub Actions 워크플로우 (.github/workflows/deploy-render.yml)
   - 배포 상태 모니터링 (monitor_deployment.py)
   - Git push = Render 자동 배포 트리거
   - /ccsave 명령 시 자동 Render 배포 지원
+  - Poetry 오류 수정 및 pip 기반 배포 설정
 
