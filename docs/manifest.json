@@ -1,0 +1,36 @@
+{
+    "name": "SatChat Marine Debris Monitor",
+    "short_name": "SatChat",
+    "description": "Advanced marine debris monitoring with AI-powered multi-index analysis",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#1f2937",
+    "theme_color": "#3b82f6",
+    "orientation": "portrait-primary",
+    "categories": ["environment", "science", "utilities"],
+    "icons": [
+        {
+            "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiBmaWxsPSIjMWYyOTM3Ii8+CjxjaXJjbGUgY3g9Ijk2IiBjeT0iOTYiIHI9IjgwIiBmaWxsPSIjM2I4MmY2Ii8+Cjx0ZXh0IHg9Ijk2IiB5PSIxMTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQ4IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+8J+bsO+4jzwvdGV4dD4KPC9zdmc+",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiBmaWxsPSIjMWYyOTM3Ii8+CjxjaXJjbGUgY3g9IjI1NiIgY3k9IjI1NiIgcj0iMjAwIiBmaWxsPSIjM2I4MmY2Ii8+Cjx0ZXh0IHg9IjI1NiIgeT0iMzAwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMjgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn5uw77iPPC90ZXh0Pgo8L3N2Zz4=",
+            "sizes": "512x512",
+            "type": "image/svg+xml"
+        }
+    ],
+    "features": [
+        "offline-first",
+        "client-side-ai", 
+        "tensorflow-js",
+        "multi-index-analysis",
+        "real-time-processing"
+    ],
+    "capabilities": [
+        "marine_debris_detection",
+        "spectral_analysis", 
+        "machine_learning",
+        "satellite_imagery"
+    ]
+}
