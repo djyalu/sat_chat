@@ -289,3 +289,17 @@ curl http://localhost:8000/health
   - /ccsave 명령 시 자동 Render 배포 지원
   - Poetry 오류 수정 및 pip 기반 배포 설정
 
+## 체크포인트 11 - 2025-08-24 12:56
+- 내용: Render 배포 이슈 해결 - Python 3.11 설정 및 데모 모드 추가
+- 상태: 활성
+- Git 브랜치: main
+- Git 커밋: 58914d8
+- 주요 수정사항:
+  - Python 3.11.6 런타임 명시 (runtime.txt, .python-version)
+  - requirements.txt 의존성 버전 고정
+  - render.yaml uvicorn 직접 실행 설정
+  - Sentinel Hub 자격 증명 없이도 데모 모드 작동
+  - health_check.py 배포 모니터링 도구 추가
+  - 로컬 테스트 완료 (정상 작동)
+  - Render 환경 변수 설정 대기 중
+
