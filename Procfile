@@ -1,1 +1,1 @@
-web: uvicorn real_sentinel_api:app --host 0.0.0.0 --port ${PORT:-8002}
+web: python -m uvicorn real_sentinel_api:app --host 0.0.0.0 --port $PORT
