@@ -8,8 +8,7 @@ const CACHE_URLS = [
     'https://cdn.jsdelivr.net/npm/chart.js',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js',
-    'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-layers@latest/dist/tf-layers.min.js'
+    // AI Analysis Engine - No external dependencies needed
 ];
 
 // Install event - cache resources

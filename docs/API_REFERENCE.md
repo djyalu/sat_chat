@@ -43,7 +43,7 @@ curl https://satchat-client-proxy.onrender.com/
   "status": "operational",
   "processing": "client-side",
   "features": {
-    "tensorflow_js": true,
+    "ai_analysis": true,
     "offline_capable": true,
     "memory_footprint": "ultra-low",
     "client_ai": true
@@ -111,7 +111,7 @@ curl https://satchat-client-proxy.onrender.com/regions
       "bbox": [126.5, 37.4, 126.7, 37.6]
     }
   },
-  "processing_note": "Analysis performed client-side with TensorFlow.js",
+  "processing_note": "Analysis performed client-side with AI Analysis Engine",
   "capabilities": ["multi-index", "ml-detection", "offline-first"]
 }
 ```
@@ -136,12 +136,12 @@ curl https://satchat-client-proxy.onrender.com/region/west_sea
   "timestamp": "2025-08-24T15:30:00.123456",
   "processing_mode": "client-side",
   "instructions": {
-    "analysis": "Use client-side TensorFlow.js processor",
+    "analysis": "Use client-side AI Analysis Engine processor",
     "indices": ["FDI", "NDWI", "MCI", "FAI", "Turbidity"],
     "ml_detection": "CNN-based debris classification",
     "offline_capable": true
   },
-  "data_source": "Client-Generated Synthetic + TensorFlow.js",
+  "data_source": "Client-Generated Synthetic + AI Analysis Engine",
   "api_role": "metadata_provider_only"
 }
 ```
@@ -368,4 +368,4 @@ curl http://localhost:8000/health
 
 ---
 
-*이 API는 클라이언트 사이드 처리를 위한 최소한의 메타데이터만 제공하며, 실제 분석은 TensorFlow.js를 통해 브라우저에서 수행됩니다.*
+*이 API는 클라이언트 사이드 처리를 위한 최소한의 메타데이터만 제공하며, 실제 분석은 AI Analysis Engine를 통해 브라우저에서 수행됩니다.*

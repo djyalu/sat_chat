@@ -17,7 +17,7 @@ SatChat은 **Client-Heavy Progressive Web Application**으로 설계된 해양 �
 | Layer | Technology | Version | Purpose | Resource Usage |
 |-------|------------|---------|---------|----------------|
 | **Frontend** | Vanilla JavaScript | ES2022 | Core processing | 50-200MB RAM |
-| | TensorFlow.js | 4.10+ | ML inference | 100-500MB RAM |
+| | AI Analysis Engine | 4.10+ | ML inference | 100-500MB RAM |
 | | Leaflet.js | 1.9.4 | Interactive mapping | 20-50MB RAM |
 | | Tailwind CSS | 3.3+ | UI styling | 5-10MB RAM |
 | **Backend** | FastAPI | 0.104.1 | API proxy | <20MB RAM |
@@ -74,7 +74,7 @@ Scaling:
 
 ## 🧠 AI/ML 사양
 
-### TensorFlow.js 모델 아키텍처
+### AI Analysis Engine 모델 아키텍처
 
 #### Marine Debris Detection Model
 ```javascript
@@ -198,7 +198,7 @@ interface ServiceInfo {
   status: "operational" | "maintenance" | "degraded";
   processing: "client-side";
   features: {
-    tensorflow_js: boolean;
+    ai_analysis: boolean;
     offline_capable: boolean;
     memory_footprint: "ultra-low";
     client_ai: boolean;

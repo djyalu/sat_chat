@@ -23,7 +23,7 @@
     "features": [
         "offline-first",
         "client-side-ai", 
-        "tensorflow-js",
+        "ai-analysis",
         "multi-index-analysis",
         "real-time-processing"
     ],
