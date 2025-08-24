@@ -119,4 +119,4 @@ if __name__ == "__main__":
     print("⚡ Memory Target: <20MB RAM")
     
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)# Force Render Redeploy - Mon Aug 25 00:32:18 KST 2025
