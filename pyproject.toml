@@ -5,6 +5,9 @@ description = "SatChat Marine Debris Monitoring"
 authors = ["Telefix Team"]
 packages = []
 
+[tool.poetry.group.dev]
+optional = true
+
 [tool.poetry.dependencies]
 python = "^3.11"
 fastapi = "^0.104.1"
