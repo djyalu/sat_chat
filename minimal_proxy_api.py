@@ -43,7 +43,7 @@ async def root():
         "status": "operational",
         "processing": "client-side",
         "features": {
-            "tensorflow_js": True,
+            "ai_analysis": True,
             "offline_capable": True,
             "memory_footprint": "ultra-low",
             "client_ai": True
@@ -65,7 +65,7 @@ async def get_regions():
     """Return available regions for client processing"""
     return {
         "regions": KOREA_REGIONS,
-        "processing_note": "Analysis performed client-side with TensorFlow.js",
+        "processing_note": "Analysis performed client-side with AI algorithms",
         "capabilities": ["multi-index", "ml-detection", "offline-first"]
     }
 
@@ -85,12 +85,12 @@ async def get_region_metadata(region_name: str):
         "timestamp": datetime.now().isoformat(),
         "processing_mode": "client-side",
         "instructions": {
-            "analysis": "Use client-side TensorFlow.js processor",
+            "analysis": "Use client-side AI analysis engine",
             "indices": ["FDI", "NDWI", "MCI", "FAI", "Turbidity"],
             "ml_detection": "CNN-based debris classification",
             "offline_capable": True
         },
-        "data_source": "Client-Generated Synthetic + TensorFlow.js",
+        "data_source": "Client-Generated Synthetic + AI Analysis",
         "api_role": "metadata_provider_only"
     }
 
@@ -106,7 +106,7 @@ async def system_info():
         "mode": "client-ai-proxy",
         "ram_target": "20MB",
         "processing": "offloaded_to_client",
-        "tensorflow_js": "enabled",
+        "ai_engine": "enabled",
         "offline_first": True
     }
 
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     import uvicorn
     
     print("🚀 Starting SatChat Ultra-Minimal Proxy...")
-    print("💻 Client-side AI Processing + TensorFlow.js")
+    print("💻 Client-side AI Processing + Advanced Algorithms")
     print("📱 Progressive Web App + Offline-First")
     print("⚡ Memory Target: <20MB RAM")
     

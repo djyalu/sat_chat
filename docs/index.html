@@ -75,19 +75,19 @@
         <div class="bg-gray-800 rounded-lg p-4 mb-6">
             <h2 class="text-xl font-bold mb-4">🌊 Region Selection</h2>
             <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                <button onclick="loadClientAnalysis('west_sea')" class="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
+                <button onclick="safeAnalysisExecution('west_sea', loadClientAnalysis)" class="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
                     🌊 서해<br><span class="text-xs text-gray-300">인천 근해</span>
                 </button>
-                <button onclick="loadClientAnalysis('south_sea')" class="px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg">
+                <button onclick="safeAnalysisExecution('south_sea', loadClientAnalysis)" class="px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg">
                     🌊 남해<br><span class="text-xs text-gray-300">거제도 근해</span>
                 </button>
-                <button onclick="loadClientAnalysis('east_sea')" class="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg">
+                <button onclick="safeAnalysisExecution('east_sea', loadClientAnalysis)" class="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg">
                     🌊 동해<br><span class="text-xs text-gray-300">울산 근해</span>
                 </button>
-                <button onclick="loadClientAnalysis('busan_port')" class="px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg">
+                <button onclick="safeAnalysisExecution('busan_port', loadClientAnalysis)" class="px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg">
                     🌊 부산항<br><span class="text-xs text-gray-300">항만 일대</span>
                 </button>
-                <button onclick="loadClientAnalysis('incheon_port')" class="px-4 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg">
+                <button onclick="safeAnalysisExecution('incheon_port', loadClientAnalysis)" class="px-4 py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg">
                     🌊 인천항<br><span class="text-xs text-gray-300">항만 일대</span>
                 </button>
             </div>
@@ -435,86 +435,7 @@
             }
         }
 
-        // Enhanced analysis
-        async function loadEnhancedAnalysis(region) {
-            currentRegion = region;
-            
-            const regionNames = {
-                'west_sea': '서해 (인천 근해)',
-                'south_sea': '남해 (거제도 근해)', 
-                'east_sea': '동해 (울산 근해)',
-                'busan_port': '부산항 일대',
-                'incheon_port': '인천항 일대'
-            };
-            
-            // Show status
-            const statusDiv = document.getElementById('analysisStatus');
-            const statusText = document.getElementById('statusText');
-            const statusTime = document.getElementById('statusTime');
-            
-            statusDiv.style.display = 'block';
-            statusText.textContent = `${regionNames[region]} 다중 지표 분석 중...`;
-            statusTime.textContent = new Date().toLocaleString('ko-KR');
-            
-            try {
-                console.log(`Starting analysis for ${region} using ${currentApiUrl}...`);
-                const startTime = Date.now();
-                
-                let response, data;
-                
-                if (currentApiUrl === API_URLS.enhanced) {
-                    response = await fetch(
-                        `${currentApiUrl}/enhanced/region/${region}?` + 
-                        new URLSearchParams({
-                            analysis_types: 'fdi,ndwi,mci,turbidity,debris_ml',
-                            validation_level: 'high',
-                            include_tiles: 'true'
-                        })
-                    );
-                } else {
-                    response = await fetch(`${currentApiUrl}/region/${region}`);
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                data = await response.json();
-                const loadTime = ((Date.now() - startTime) / 1000).toFixed(1);
-                
-                console.log('Analysis data received:', data);
-                
-                // Update status - success
-                statusText.innerHTML = `
-                    ✅ ${regionNames[region]} 다중 지표 분석 완료 
-                    <span class="text-gray-400 ml-4">소요시간: ${loadTime}초</span>
-                `;
-                
-                // Update visualizations
-                updateVisualizations(data);
-                updateStatistics(data);
-                
-                if (data.validation) {
-                    updateValidation(data.validation);
-                } else {
-                    updateFallbackValidation(data);
-                }
-                
-                updateTimeSeriesChart(data);
-                
-                // Update map center
-                if (data.bbox && data.bbox.length >= 4) {
-                    const [lon1, lat1, lon2, lat2] = data.bbox;
-                    const centerLat = (lat1 + lat2) / 2;
-                    const centerLon = (lon1 + lon2) / 2;
-                    map.setView([centerLat, centerLon], 12);
-                }
-                
-            } catch (error) {
-                console.error('Analysis error:', error);
-                statusText.innerHTML = `❌ 다중 지표 분석 실패: ${error.message}`;
-            }
-        }
+        // Old enhanced analysis function removed to prevent conflicts
 
         // Update visualizations
         function updateVisualizations(data) {
@@ -815,6 +736,7 @@
                 this.model = null;
                 this.isModelLoaded = false;
                 this.isInitializing = false;
+                this._isProcessingTiles = false;
                 this.processingCache = new Map();
             }
 
@@ -919,13 +841,22 @@
                 }
             }
 
-            // Process image tiles with ML
+            // Process image tiles with ML - STACK OVERFLOW PROOF
             async processImageTiles(imageData, tileSize = 64) {
-                // Fallback for when TensorFlow.js is not available or model fails
-                if (typeof tf === 'undefined' || !this.isModelLoaded) {
-                    console.log('🔄 Running without ML model - using spectral analysis only');
-                    return this.simulateMLPredictions(imageData, tileSize);
+                // CRITICAL: Prevent any recursive calls
+                if (this._isProcessingTiles) {
+                    console.warn('⚠️ Tile processing already in progress, skipping...');
+                    return { predictions: [], confidence: 0.5 };
                 }
+                
+                this._isProcessingTiles = true;
+                
+                try {
+                    // Fallback for when TensorFlow.js is not available or model fails
+                    if (typeof tf === 'undefined' || !this.isModelLoaded) {
+                        console.log('🔄 Running without ML model - using spectral analysis only');
+                        return this.simulateMLPredictions(imageData, tileSize);
+                    }
                 
                 const { data, width, height } = imageData;
                 const tiles = [];
@@ -976,6 +907,11 @@
                     : 0;
 
                 return { predictions, confidence: avgConfidence };
+                
+                } finally {
+                    // CRITICAL: Always release tile processing lock
+                    this._isProcessingTiles = false;
+                }
             }
 
             // Simulate ML predictions when TensorFlow.js fails
@@ -1267,12 +1203,56 @@
             }
         }
 
-        // Initialize client analyzer
-        const clientAnalyzer = new ClientMarineAnalyzer();
+        // Initialize client analyzer - SINGLETON PATTERN
+        let clientAnalyzer = null;
+        
+        function getClientAnalyzer() {
+            if (!clientAnalyzer) {
+                clientAnalyzer = new ClientMarineAnalyzer();
+            }
+            return clientAnalyzer;
+        }
 
-        // Global processing lock to prevent stack overflow
+        // ULTIMATE STACK OVERFLOW PROTECTION
         let isProcessing = false;
         let processingRegion = null;
+        let analysisCount = 0;
+        const MAX_ANALYSIS_CALLS = 10; // 최대 10회 분석만 허용
+        
+        // 완전히 안전한 분석 실행기 - ENHANCED PROTECTION
+        function safeAnalysisExecution(region, callback) {
+            // 1단계: 호출 빈도 제한
+            if (analysisCount >= MAX_ANALYSIS_CALLS) {
+                console.error('🚨 SAFETY: Maximum analysis calls reached, stopping to prevent overflow');
+                alert('분석 호출이 너무 많습니다. 잠시 후 다시 시도해 주세요.');
+                return;
+            }
+            
+            // 2단계: 중복 실행 방지
+            if (isProcessing && processingRegion === region) {
+                console.warn(`⚠️ SAFETY: ${region} analysis already in progress, ignoring duplicate request`);
+                return;
+            }
+            
+            // 3단계: 카운터 증가 및 자동 감소 스케줄링
+            analysisCount++;
+            console.log(`🔢 Analysis count: ${analysisCount}/${MAX_ANALYSIS_CALLS}`);
+            
+            // 5분 후 카운터 감소 (완전 리셋 아님)
+            setTimeout(() => { 
+                analysisCount = Math.max(0, analysisCount - 1);
+                console.log(`🔄 Analysis count decreased: ${analysisCount}/${MAX_ANALYSIS_CALLS}`);
+            }, 300000);
+            
+            // 4단계: 예외 처리와 함께 콜백 실행
+            try {
+                console.log(`🚀 SAFE EXECUTION: Starting analysis for ${region}`);
+                callback(region);
+            } catch (error) {
+                console.error('🚨 SAFETY: Callback execution failed:', error);
+                analysisCount = Math.max(0, analysisCount - 1); // 실패 시 즉시 카운터 감소
+            }
+        }
         
         // Enhanced loadAnalysis function with client processing
         async function loadClientAnalysis(region) {
@@ -1298,7 +1278,8 @@
             try {
                 console.log(`🚀 Starting advanced client-side analysis for ${region}...`);
                 
-                const results = await clientAnalyzer.performCompleteAnalysis(region);
+                const analyzer = getClientAnalyzer();
+                const results = await analyzer.performCompleteAnalysis(region);
                 
                 // Update status
                 if (statusText) {
@@ -1461,16 +1442,17 @@
             if (typeof tf !== 'undefined') {
                 console.log('✅ TensorFlow.js loaded, initializing client analyzer...');
                 try {
-                    await clientAnalyzer.initializeModel();
+                    const analyzer = getClientAnalyzer();
+                    await analyzer.initializeModel();
                     console.log('🧠 Model initialized successfully, starting default analysis...');
-                    setTimeout(() => loadClientAnalysis('south_sea'), 1500);
+                    setTimeout(() => safeAnalysisExecution('south_sea', loadClientAnalysis), 1500);
                 } catch (err) {
                     console.warn('⚠️ Model init failed, running without ML:', err);
-                    setTimeout(() => loadClientAnalysis('south_sea'), 1000);
+                    setTimeout(() => safeAnalysisExecution('south_sea', loadClientAnalysis), 1000);
                 }
             } else {
                 console.warn('❌ TensorFlow.js not available, running basic analysis');
-                setTimeout(() => loadClientAnalysis('south_sea'), 1000);
+                setTimeout(() => safeAnalysisExecution('south_sea', loadClientAnalysis), 1000);
             }
             
             console.log('Dashboard initialized successfully');

@@ -315,3 +315,9 @@ curl http://localhost:8000/health
   - 배포 자동화 완전 구현
   - /ccsave 명령 시 자동 Render 배포
 
+## 체크포인트 13 - 2025-08-25 00:27
+- 내용: Client-Heavy 아키텍처 완전 구현 및 일관성 정리 - TensorFlow.js PWA + Ultra-Minimal Proxy
+- 상태: 활성
+- Git 브랜치: main
+- Git 커밋: 121c83e1
+
