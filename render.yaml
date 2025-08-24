@@ -3,8 +3,8 @@ services:
     name: sat-chat-api
     runtime: python
     plan: free
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: uvicorn real_sentinel_api:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && echo "Build complete"
+    startCommand: python -m uvicorn real_sentinel_api:app --host 0.0.0.0 --port ${PORT:-10000}
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"

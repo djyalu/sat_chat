@@ -1,0 +1,15 @@
+# Dummy pyproject.toml to prevent Poetry errors
+# This project uses pip and requirements.txt
+
+[tool.poetry]
+name = "sat-chat"
+version = "1.0.0"
+description = "SatChat Marine Debris Monitoring System"
+
+# Empty dependencies - we use requirements.txt instead
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
