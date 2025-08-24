@@ -1,0 +1,176 @@
+#!/usr/bin/env python3
+"""
+SatChat 완전 자동 배포 스크립트
+GitHub push만 하면 자동으로 Render에 배포됨
+"""
+
+import os
+import json
+import subprocess
+import time
+import requests
+from datetime import datetime
+
+class AutoDeployer:
+    def __init__(self):
+        self.github_repo = "https://github.com/djyalu/sat_chat"
+        self.render_deploy_url = "https://render.com/deploy"
+        
+    def check_git_status(self):
+        """Git 상태 확인"""
+        print("📝 Git 상태 확인...")
+        result = subprocess.run(['git', 'status', '--porcelain'], 
+                              capture_output=True, text=True)
+        if result.stdout:
+            print("   변경된 파일이 있습니다.")
+            return True
+        print("   변경 사항 없음")
+        return False
+    
+    def git_add_commit_push(self, message=None):
+        """Git 자동 커밋 및 푸시"""
+        if not message:
+            message = f"Auto deploy at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        
+        print("📦 Git 커밋 및 푸시...")
+        
+        # Add all changes
+        subprocess.run(['git', 'add', '-A'])
+        
+        # Commit
+        commit_message = f"{message}\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+        subprocess.run(['git', 'commit', '-m', commit_message])
+        
+        # Push
+        result = subprocess.run(['git', 'push', 'origin', 'main'], 
+                              capture_output=True, text=True)
+        if result.returncode == 0:
+            print("✅ GitHub 푸시 성공!")
+            return True
+        else:
+            print(f"❌ 푸시 실패: {result.stderr}")
+            return False
+    
+    def create_render_blueprint(self):
+        """Render Blueprint URL 생성"""
+        blueprint_url = f"{self.render_deploy_url}?repo={self.github_repo}"
+        return blueprint_url
+    
+    def trigger_render_deploy(self):
+        """Render 배포 트리거"""
+        print("\n🚀 Render 배포 시작...")
+        
+        # Blueprint URL로 배포 페이지 오픈
+        blueprint_url = self.create_render_blueprint()
+        print(f"📋 배포 URL: {blueprint_url}")
+        
+        # 브라우저 자동 열기
+        try:
+            import webbrowser
+            webbrowser.open(blueprint_url)
+            print("✅ 브라우저에서 배포 페이지 열림")
+        except:
+            print("⚠️ 브라우저를 열 수 없습니다. 수동으로 접속하세요:")
+            print(f"   {blueprint_url}")
+        
+        return blueprint_url
+    
+    def check_deployment_status(self, timeout=600):
+        """배포 상태 확인"""
+        print("\n📊 배포 상태 모니터링...")
+        
+        possible_urls = [
+            "https://sat-chat.onrender.com",
+            "https://sat-chat-api.onrender.com"
+        ]
+        
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            for url in possible_urls:
+                try:
+                    response = requests.get(url, timeout=5)
+                    if response.status_code == 200:
+                        print(f"✅ 배포 성공! {url}")
+                        return True
+                except:
+                    pass
+            
+            print(f"⏳ 대기 중... ({int(time.time() - start_time)}초)")
+            time.sleep(30)
+        
+        print("⏰ 배포 타임아웃")
+        return False
+    
+    def auto_deploy(self):
+        """완전 자동 배포 실행"""
+        print("=" * 60)
+        print("🤖 SatChat 완전 자동 배포 시작")
+        print("=" * 60)
+        
+        # 1. Git 상태 확인
+        if self.check_git_status():
+            # 2. Git 커밋 및 푸시
+            if not self.git_add_commit_push("Auto deployment update"):
+                print("❌ Git 푸시 실패. 수동 확인 필요")
+                return False
+        
+        # 3. Render 배포 트리거
+        deploy_url = self.trigger_render_deploy()
+        
+        # 4. 배포 안내
+        print("\n" + "=" * 60)
+        print("📋 다음 단계를 브라우저에서 완료하세요:")
+        print("1. 'Connect GitHub' 클릭")
+        print("2. GitHub 계정 연결 승인")
+        print("3. 'Deploy' 버튼 클릭")
+        print("4. 5-10분 대기")
+        print("=" * 60)
+        
+        # 5. 배포 상태 확인 (선택적)
+        check = input("\n배포 상태를 자동 확인할까요? (y/n): ")
+        if check.lower() == 'y':
+            self.check_deployment_status()
+        
+        return True
+
+def create_auto_deploy_script():
+    """자동 배포를 위한 쉘 스크립트 생성"""
+    script_content = """#!/bin/bash
+# SatChat 원클릭 자동 배포
+
+echo "🚀 SatChat 자동 배포 시작"
+
+# Python 스크립트 실행
+python3 auto_deploy.py
+
+echo "✅ 자동 배포 프로세스 완료"
+"""
+    
+    with open('deploy.sh', 'w') as f:
+        f.write(script_content)
+    
+    os.chmod('deploy.sh', 0o755)
+    print("✅ deploy.sh 스크립트 생성됨")
+    print("   실행: ./deploy.sh")
+
+if __name__ == "__main__":
+    # 자동 배포 실행
+    deployer = AutoDeployer()
+    
+    print("🎯 SatChat 자동 배포 옵션:")
+    print("1. 즉시 자동 배포")
+    print("2. 배포 스크립트 생성")
+    print("3. 배포 URL만 보기")
+    
+    choice = input("\n선택 (1/2/3): ")
+    
+    if choice == '1':
+        deployer.auto_deploy()
+    elif choice == '2':
+        create_auto_deploy_script()
+    elif choice == '3':
+        url = deployer.create_render_blueprint()
+        print(f"\n📋 배포 URL: {url}")
+        print("브라우저에서 이 URL을 열어 배포하세요.")
+    else:
+        print("잘못된 선택입니다.")
