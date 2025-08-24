@@ -8,6 +8,6 @@ services:
       - key: PYTHON_VERSION
         value: "3.11"
       - key: SENTINEL_HUB_CLIENT_ID
-        sync: false
+        value: "***REMOVED***"
       - key: SENTINEL_HUB_CLIENT_SECRET
-        sync: false
+        value: "***REMOVED***"
