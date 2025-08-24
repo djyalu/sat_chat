@@ -1,10 +1,9 @@
 services:
   - type: web
     name: sat-chat-api
-    runtime: python
-    plan: free
-    buildCommand: ./build.sh
-    startCommand: python -m uvicorn real_sentinel_api:app --host 0.0.0.0 --port ${PORT:-10000}
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn real_sentinel_api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
@@ -12,14 +11,3 @@ services:
         sync: false
       - key: SENTINEL_HUB_CLIENT_SECRET
         sync: false
-      - key: PORT
-        generateValue: true
-  
-  - type: static
-    name: sat-chat-frontend
-    buildCommand: echo "Static files ready"
-    staticPublishPath: .
-    routes:
-      - type: rewrite
-        source: /api/*
-        destination: https://sat-chat-api.onrender.com/*
