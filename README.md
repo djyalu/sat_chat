@@ -1,165 +1,472 @@
-# SatChat - 해상 폐기물 모니터링 시스템
+# 🛰️ SatChat - Advanced Satellite Marine Debris Monitoring
 
-> 텔레픽스(Telefix)의 위성 데이터 기반 해상 폐기물 탐지 및 모니터링 솔루션
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![Sentinel-2](https://img.shields.io/badge/Sentinel--2-Active-brightgreen.svg)](https://sentinel.esa.int/web/sentinel/missions/sentinel-2)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🌊 프로젝트 개요
+> **Advanced marine debris detection and monitoring system using satellite imagery, machine learning, and multi-spectral analysis.**
 
-SatChat은 위성 영상 데이터와 AI/ML 기술을 활용하여 해상 폐기물을 자동으로 탐지하고 모니터링하는 시스템입니다. 한국 해역의 특성에 최적화된 알고리즘을 통해 플라스틱, 기름, 어구 등 다양한 해양 폐기물을 실시간으로 추적합니다.
+🌐 **Live Demo**: [https://sat-chat.onrender.com](https://sat-chat.onrender.com)  
+📊 **Dashboard**: [Multi-Analysis Dashboard](https://sat-chat.onrender.com/multi_analysis.html)
 
-### 🎯 주요 기능
+---
 
-- **다중 위성 데이터 통합**: Sentinel-2, KOMPSAT, Landsat 등 다양한 위성 데이터 활용
-- **AI 기반 폐기물 탐지**: 딥러닝 모델을 통한 자동 폐기물 식별 및 분류
-- **실시간 모니터링**: 웹 대시보드를 통한 실시간 현황 파악
-- **자동 알림 시스템**: 임계값 초과 시 자동 경보 발송
-- **한국 해역 최적화**: 서해, 남해, 동해 각 해역의 특성에 맞춰 최적화
+## ✨ Key Features
 
-## 🛠️ 기술 스택
+### 🛰️ Satellite Data Integration
+- **Real-time Sentinel-2 data** from Copernicus program
+- **Korean maritime focus** with optimized regional analysis
+- **Multi-temporal data fusion** for enhanced accuracy
+- **Cloud-free image selection** with quality filtering
 
-### Backend
-- **Language**: Python 3.11+
-- **Framework**: FastAPI
-- **Database**: PostgreSQL + PostGIS
-- **Cache**: Redis
-- **Task Queue**: Celery
-- **Storage**: MinIO (S3-compatible)
+### 🔬 Advanced Analysis Capabilities
+- **Multi-Index Processing**: FDI, NDWI, MCI, Turbidity analysis
+- **ML-Based Segmentation**: MARIDA 23-class Random Forest model
+- **Spectral Enhancement**: Pan-sharpening and multi-temporal stacking
+- **Field Validation System**: Ground-truth integration and confidence scoring
 
-### AI/ML
-- **Deep Learning**: PyTorch
-- **Computer Vision**: OpenCV, scikit-image
-- **Geospatial**: Rasterio, GeoPandas
-- **Model**: YOLO, U-Net, Vision Transformer
+### 🗺️ Interactive Visualization
+- **Real-time Interactive Maps** with Leaflet.js
+- **Multi-layer Analysis** overlays and comparisons
+- **Time-series Visualization** with Chart.js
+- **Responsive Design** for desktop and mobile
 
-### Infrastructure
-- **Container**: Docker
-- **Orchestration**: Kubernetes
-- **Monitoring**: Prometheus + Grafana
-- **CI/CD**: GitHub Actions
+### 🚀 Production-Ready Deployment
+- **Render Cloud Platform** with automatic scaling
+- **RESTful APIs** with comprehensive documentation
+- **CORS-enabled** for cross-origin requests
+- **Health monitoring** and status indicators
 
-## 🚀 시작하기
+## 🏗️ System Architecture
 
-### 사전 요구사항
+```
+🏠 SatChat System
+├── 🚀 Production API (real_sentinel_api.py)
+│   ├── Sentinel Hub integration
+│   ├── Korean maritime regions
+│   └── Health monitoring
+│
+├── 📊 Multi-Analysis Dashboard (multi_analysis.html)
+│   ├── Interactive maps
+│   ├── Real-time status
+│   └── Analysis tools
+│
+├── 🔌 Specialized APIs (/apis/)
+│   ├── Enhanced ML processing
+│   ├── High-resolution analysis
+│   ├── Free enhancement techniques
+│   └── KOMPSAT integration
+│
+└── 🌐 Web Interface (/web/)
+    ├── Landing pages
+    └── Data visualization
+```
 
+## 🚀 Quick Start
+
+### Prerequisites
 - Python 3.11+
-- PostgreSQL 14+ with PostGIS extension
-- Redis 6+
-- Docker & Docker Compose
-- CUDA 11.8+ (GPU 사용 시)
+- Sentinel Hub account ([Sign up here](https://www.sentinel-hub.com/))
+- Git
 
-### 설치 및 실행
-
-1. **저장소 클론**
+### 1. Clone Repository
 ```bash
-git clone https://github.com/telefix/satchat.git
-cd satchat
+git clone https://github.com/djyalu/sat_chat.git
+cd sat_chat
 ```
 
-2. **가상환경 설정**
+### 2. Install Dependencies
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-3. **의존성 설치**
+### 3. Configure Environment
 ```bash
-pip install poetry
-poetry install
-```
-
-4. **환경 변수 설정**
-```bash
+# Copy environment template
 cp .env.example .env
-# .env 파일을 편집하여 필요한 값 설정
+
+# Edit with your Sentinel Hub credentials
+nano .env
 ```
 
-5. **데이터베이스 초기화**
+**Required Environment Variables:**
+```env
+SENTINEL_HUB_CLIENT_ID=your_client_id
+SENTINEL_HUB_CLIENT_SECRET=your_client_secret
+```
+
+### 4. Run Local Development Server
 ```bash
-# PostgreSQL with PostGIS 실행
-docker-compose up -d postgres redis minio
+# Main API server
+python real_sentinel_api.py
 
-# 데이터베이스 마이그레이션
-alembic upgrade head
+# Dashboard server (separate terminal)
+python serve_dashboard.py
 ```
 
-6. **서버 실행**
+### 5. Access Applications
+- **Main API**: http://localhost:8002
+- **Dashboard**: http://localhost:5555
+- **Interactive Analysis**: http://localhost:5555/multi_analysis.html
+
+---
+
+## 📚 API Documentation
+
+### Core Endpoints
+
+#### Health Check
+```http
+GET /health
+```
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-08-24T11:58:00"
+}
+```
+
+#### Korean Maritime Regions
+```http
+GET /regions
+```
+**Response:**
+```json
+{
+  "regions": {
+    "west_sea": {"name": "서해", "bbox": [124.5, 35.5, 126.5, 37.5]},
+    "south_sea": {"name": "남해", "bbox": [128.4, 34.6, 128.8, 35.0]},
+    "east_sea": {"name": "동해", "bbox": [128.5, 37.0, 130.0, 38.5]}
+  }
+}
+```
+
+#### Marine Debris Analysis
+```http
+GET /region/{region_name}/analysis
+```
+**Parameters:**
+- `region_name`: Korean region (west_sea, south_sea, east_sea)
+- `days_back`: Analysis period (default: 7)
+- `cloud_cover`: Maximum cloud coverage (default: 20)
+
+**Response:**
+```json
+{
+  "region": "west_sea",
+  "analysis_date": "2024-08-24T11:58:00",
+  "satellite_data": {...},
+  "spectral_indices": {
+    "fdi": 0.25,
+    "ndwi": -0.15,
+    "mci": 0.08
+  },
+  "debris_detection": {
+    "total_areas": 15,
+    "confidence_score": 0.82,
+    "coordinates": [...]
+  }
+}
+```
+
+### Specialized APIs
+
+#### Enhanced ML Processing
 ```bash
-# 개발 서버
-uvicorn src.satchat.main:app --reload --host 0.0.0.0 --port 8000
-
-# Celery Worker
-celery -A src.satchat.worker worker --loglevel=info
-
-# Celery Beat (Scheduler)
-celery -A src.satchat.worker beat --loglevel=info
+# Start enhanced API
+python apis/enhanced_api.py  # Port 8003
 ```
 
-## 📁 프로젝트 구조
-
-```
-satchat/
-├── src/
-│   └── satchat/
-│       ├── api/             # API 엔드포인트
-│       ├── core/            # 핵심 설정 및 유틸리티
-│       ├── data/            # 데이터 처리 모듈
-│       ├── models/          # 데이터 모델
-│       ├── services/        # 비즈니스 로직
-│       ├── ml/              # ML 모델 및 추론
-│       ├── processing/      # 이미지 처리
-│       └── monitoring/      # 모니터링 및 알림
-├── tests/                   # 테스트 코드
-├── docs/                    # 문서
-├── config/                  # 설정 파일
-├── scripts/                 # 유틸리티 스크립트
-├── notebooks/               # Jupyter 노트북
-└── data/                    # 데이터 디렉토리
-    ├── raw/                 # 원본 데이터
-    ├── processed/           # 처리된 데이터
-    └── models/              # 학습된 모델
-```
-
-## 🧪 개발
-
-### 테스트 실행
+#### High-Resolution Analysis
 ```bash
-# 전체 테스트
-pytest
-
-# 커버리지 포함
-pytest --cov=src/satchat
-
-# 특정 테스트
-pytest tests/unit/test_detection.py
+# KOMPSAT integration
+python apis/kompsat_high_res_api.py  # Port 8003
 ```
 
-### 코드 품질
+#### Free Enhancement Techniques
 ```bash
-# 포매팅
-black src/ tests/
-
-# Linting
-ruff check src/ tests/
-
-# Type checking
-mypy src/
+# Cost-free resolution enhancement
+python apis/simple_free_enhancement.py  # Port 8005
 ```
 
-### API 문서
+---
 
-서버 실행 후:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+## 🌊 Korean Maritime Monitoring
 
-## 🔧 환경 설정
+### Target Regions
 
-주요 환경 변수 (상세 내용은 `.env.example` 참조):
+| Region | Korean Name | Coverage | Key Features |
+|--------|-------------|----------|-------------|
+| **West Sea** | 서해 | Incheon vicinity | High debris accumulation, shipping traffic |
+| **South Sea** | 남해 | Geoje Island area | Coastal plastic, fishing industry impact |
+| **East Sea** | 동해 | Pohang-Ulsan coast | Industrial discharge, thermal monitoring |
 
-- `DATABASE_URL`: PostgreSQL 연결 URL
-- `REDIS_URL`: Redis 연결 URL
-- `S3_ENDPOINT`: S3/MinIO 엔드포인트
-- `SENTINEL_USER/PASSWORD`: Sentinel Hub 인증
-- `KOMPSAT_API_KEY`: KOMPSAT API 키
-- `MODEL_DEVICE`: GPU 사용 여부 (cuda/cpu)
+### Spectral Indices Explained
+
+#### FDI (Floating Debris Index)
+- **Purpose**: Detect floating plastic debris
+- **Range**: -1 to 1 (higher values indicate debris)
+- **Optimized for**: Korean coastal waters
+
+#### NDWI (Normalized Difference Water Index)
+- **Purpose**: Water body identification
+- **Range**: -1 to 1 (positive values = water)
+- **Usage**: Debris vs. water classification
+
+#### MCI (Maximum Chlorophyll Index)
+- **Purpose**: Algae and organic matter detection
+- **Range**: Variable (higher = more chlorophyll)
+- **Application**: Distinguish organic from plastic debris
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|--------|
+| `SENTINEL_HUB_CLIENT_ID` | Sentinel Hub OAuth client ID | ✅ | - |
+| `SENTINEL_HUB_CLIENT_SECRET` | Sentinel Hub OAuth secret | ✅ | - |
+| `PORT` | API server port | ❌ | 8002 |
+| `CORS_ORIGINS` | Allowed CORS origins | ❌ | Auto |
+
+### Regional Customization
+
+Edit region definitions in `real_sentinel_api.py`:
+```python
+KOREA_REGIONS = {
+    "custom_region": {
+        "name": "Custom Area",
+        "bbox": [longitude_min, latitude_min, longitude_max, latitude_max]
+    }
+}
+```
+
+## 🚀 Deployment
+
+### Render Cloud Platform (Recommended)
+
+1. **Fork Repository** on GitHub
+2. **Connect to Render**:
+   - Service Type: Web Service
+   - Repository: Your forked repo
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `python real_sentinel_api.py`
+
+3. **Set Environment Variables**:
+   ```
+   SENTINEL_HUB_CLIENT_ID=your_client_id
+   SENTINEL_HUB_CLIENT_SECRET=your_client_secret
+   ```
+
+4. **Deploy**: Automatic deployment on git push
+
+### Docker Deployment
+
+```bash
+# Build container
+docker build -t satchat .
+
+# Run with environment variables
+docker run -p 8002:8002 \
+  -e SENTINEL_HUB_CLIENT_ID=your_id \
+  -e SENTINEL_HUB_CLIENT_SECRET=your_secret \
+  satchat
+```
+
+### Local Production Setup
+
+```bash
+# Install production dependencies
+pip install -r requirements.txt
+
+# Set production environment
+export NODE_ENV=production
+
+# Start with gunicorn
+gunicorn -w 4 -k uvicorn.workers.UvicornWorker real_sentinel_api:app
+```
+
+---
+
+## 🧪 Development
+
+### Project Structure
+```
+sat_chat/
+├── 📄 real_sentinel_api.py      # Main production API
+├── 📄 multi_analysis.html       # Interactive dashboard  
+├── 📄 serve_dashboard.py        # Local development server
+├── 📁 apis/                     # Specialized API modules
+│   ├── enhanced_api.py          # ML-enhanced processing
+│   ├── kompsat_high_res_api.py  # High-resolution analysis
+│   └── ...
+├── 📁 web/                      # Frontend assets
+├── 📁 src/                      # Core application source
+├── 📁 frontend/                 # React components (optional)
+└── 📋 docs/                     # Documentation
+```
+
+### Adding New Features
+
+1. **API Endpoints**: Extend `real_sentinel_api.py`
+2. **Analysis Methods**: Add to `/apis/` directory
+3. **Frontend**: Update `multi_analysis.html`
+4. **Documentation**: Update relevant docs
+
+### Testing
+
+```bash
+# Run local tests
+python -m pytest tests/
+
+# Test API endpoints
+curl http://localhost:8002/health
+curl http://localhost:8002/regions
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Deployment Issues
+
+**502 Bad Gateway on Render**
+```bash
+# Check if all dependencies are properly installed
+pip install -r requirements.txt
+
+# Verify environment variables are set
+echo $SENTINEL_HUB_CLIENT_ID
+echo $SENTINEL_HUB_CLIENT_SECRET
+
+# Test API locally first
+python real_sentinel_api.py
+curl http://localhost:8002/health
+```
+
+**Build Failures**
+- Ensure Python version compatibility (3.11+)
+- Check for conflicting dependencies in requirements.txt
+- Verify all import statements are correct
+
+**Port Binding Issues**
+```bash
+# Check if port is already in use
+netstat -tulpn | grep :8002
+
+# Kill existing process if needed
+pkill -f "python real_sentinel_api.py"
+```
+
+#### API Issues
+
+**Authentication Failures**
+```bash
+# Verify Sentinel Hub credentials
+curl -X POST "https://services.sentinel-hub.com/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials&client_id=YOUR_ID&client_secret=YOUR_SECRET"
+```
+
+**Data Retrieval Errors**
+- Check internet connectivity
+- Verify Sentinel Hub service status
+- Ensure coordinates are within valid ranges
+- Confirm cloud coverage thresholds
+
+**CORS Issues**
+```javascript
+// Ensure frontend origin is allowed
+const response = await fetch('https://your-api.onrender.com/health', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+```
+
+#### Development Issues
+
+**Module Import Errors**
+```bash
+# Install missing dependencies
+pip install fastapi uvicorn sentinelhub requests
+
+# Check Python path
+python -c "import sys; print(sys.path)"
+```
+
+**Environment Variables Not Loading**
+```bash
+# Create .env file in project root
+cp .env.example .env
+nano .env
+
+# Export variables manually
+export SENTINEL_HUB_CLIENT_ID="your_id_here"
+export SENTINEL_HUB_CLIENT_SECRET="your_secret_here"
+```
+
+### Performance Optimization
+
+**Slow API Responses**
+- Reduce analysis period (days_back parameter)
+- Increase cloud coverage threshold to find images faster
+- Use caching for repeated requests
+- Optimize spectral index calculations
+
+**Memory Issues**
+```bash
+# Monitor memory usage
+htop
+
+# Reduce image resolution in processing
+# Implement pagination for large datasets
+```
+
+### Logging and Debugging
+
+**Enable Debug Mode**
+```python
+# Add to real_sentinel_api.py
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+**Check Application Logs**
+```bash
+# Local development
+python real_sentinel_api.py 2>&1 | tee app.log
+
+# Render deployment
+# View logs in Render dashboard
+```
+
+### Health Checks
+
+**API Health Verification**
+```bash
+# Local testing
+curl http://localhost:8002/health
+
+# Production testing
+curl https://your-app.onrender.com/health
+
+# Expected response:
+# {"status": "healthy", "timestamp": "2024-08-24T12:00:00Z"}
+```
+
+**Service Monitoring**
+- Set up automated health checks
+- Monitor response times
+- Track error rates
+- Implement alerting for failures
+
+---
 
 ## 📝 라이센스
 
