@@ -26,7 +26,7 @@ SatChat은 위성 영상과 AI/ML 기술을 활용한 해양 폐기물 모니터
 ┌─────────────────────────────────────────────────────────────┐
 │                    Client-Heavy PWA                         │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐ │
-│  │   TensorFlow.js │  │  Interactive    │  │   Offline    │ │
+│  │   AI Analysis Engine │  │  Interactive    │  │   Offline    │ │
 │  │   ML Processing │  │   Dashboard     │  │   Capability │ │
 │  └─────────────────┘  └─────────────────┘  └──────────────┘ │
 └─────────────────────────────────────────────────────────────┘
@@ -40,7 +40,7 @@ SatChat은 위성 영상과 AI/ML 기술을 활용한 해양 폐기물 모니터
 
 ### 기술 스택
 - **프론트엔드**: Progressive Web App (PWA)
-- **ML 처리**: TensorFlow.js (클라이언트사이드)
+- **ML 처리**: AI Analysis Engine (클라이언트사이드)
 - **맵핑**: Leaflet.js + OpenStreetMap
 - **백엔드**: Ultra-minimal FastAPI proxy
 - **배포**: Render (서버) + GitHub Pages (클라이언트)

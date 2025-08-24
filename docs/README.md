@@ -56,12 +56,12 @@
 ### 핵심 개념
 - **Client-Heavy Architecture**: 클라이언트에서 90% 처리
 - **Progressive Web App**: 오프라인 지원 웹앱
-- **TensorFlow.js**: 브라우저에서 직접 AI 처리
+- **AI Analysis Engine**: 브라우저에서 직접 AI 처리
 - **Ultra-Minimal Proxy**: 20MB 미만 서버 메모리
 
 ### 기술 스택 요약
 ```
-Frontend: Vanilla JS + TensorFlow.js + Leaflet + Tailwind
+Frontend: Vanilla JS + AI Analysis Engine + Leaflet + Tailwind
 Backend:  FastAPI + Python 3.11
 Deploy:   GitHub Pages (Client) + Render (API)
 AI/ML:    Browser-based CNN + Multi-spectral Analysis

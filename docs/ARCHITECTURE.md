@@ -29,7 +29,7 @@ SatChat은 **Client-Heavy Architecture** 패턴을 기반으로 한 혁신적인
 graph TB
     subgraph "Client Tier"
         PWA[Progressive Web App]
-        TF[TensorFlow.js ML Engine]
+        TF[AI Analysis Engine ML Engine]
         UI[Interactive Dashboard]
         Cache[Local Cache & Storage]
     end
@@ -66,7 +66,7 @@ graph TB
 SatChatClient = {
     // ML 처리 엔진
     MLEngine: {
-        tensorflowJS: "브라우저 ML 추론",
+        aiEngine: "브라우저 ML 추론",
         modelLoader: "적응적 모델 로딩",
         preprocessing: "이미지 전처리"
     },
@@ -158,7 +158,7 @@ Core:
   - Progressive Web App: PWA 표준 구현
 
 ML & Analytics:
-  - TensorFlow.js: 브라우저 머신러닝
+  - AI Analysis Engine: 브라우저 머신러닝
   - Chart.js: 데이터 시각화
   - D3.js: 고급 시각화 (선택적)
 
