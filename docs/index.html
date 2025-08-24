@@ -814,6 +814,7 @@
             constructor() {
                 this.model = null;
                 this.isModelLoaded = false;
+                this.isInitializing = false;
                 this.processingCache = new Map();
             }
 
@@ -866,6 +867,14 @@
             async initializeModel() {
                 if (this.isModelLoaded) return;
                 
+                // Prevent multiple initialization attempts
+                if (this.isInitializing) {
+                    console.log('⏳ Model initialization already in progress...');
+                    return;
+                }
+                
+                this.isInitializing = true;
+                
                 try {
                     console.log('🤖 Initializing TensorFlow.js marine debris model...');
                     
@@ -905,6 +914,8 @@
                 } catch (error) {
                     console.error('❌ Model initialization failed:', error);
                     this.isModelLoaded = false;
+                } finally {
+                    this.isInitializing = false;
                 }
             }
 
@@ -1259,9 +1270,22 @@
         // Initialize client analyzer
         const clientAnalyzer = new ClientMarineAnalyzer();
 
+        // Global processing lock to prevent stack overflow
+        let isProcessing = false;
+        let processingRegion = null;
+        
         // Enhanced loadAnalysis function with client processing
         async function loadClientAnalysis(region) {
             if (!region) return;
+            
+            // Prevent multiple simultaneous calls
+            if (isProcessing) {
+                console.warn(`⚠️ Analysis already in progress for ${processingRegion}, ignoring new request for ${region}`);
+                return;
+            }
+            
+            isProcessing = true;
+            processingRegion = region;
             
             // Show loading status
             const statusDiv = document.getElementById('analysisStatus');
@@ -1390,7 +1414,7 @@
                     statusText.textContent = `❌ Client analysis failed: ${error.message}`;
                 }
                 
-                // Show error in containers
+                // Show error in containers (NO RETRY BUTTON to prevent recursion)
                 const containers = ['rgbContainer', 'fdiContainer', 'ndwiContainer', 'mciContainer', 'mlContainer'];
                 containers.forEach(containerId => {
                     const container = document.getElementById(containerId);
@@ -1399,10 +1423,7 @@
                             <div class="text-center p-4">
                                 <p class="text-red-400">⚠️ Analysis Error</p>
                                 <p class="text-sm text-gray-400">${error.message}</p>
-                                <button onclick="loadClientAnalysis('${region}')" 
-                                        class="mt-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
-                                    🔄 Retry
-                                </button>
+                                <p class="text-xs text-gray-500">Please refresh the page or try a different region</p>
                             </div>
                         `;
                     }
@@ -1411,6 +1432,10 @@
                 setTimeout(() => {
                     if (statusDiv) statusDiv.style.display = 'none';
                 }, 5000);
+            } finally {
+                // Always release the processing lock
+                isProcessing = false;
+                processingRegion = null;
             }
         }
 
@@ -1429,19 +1454,20 @@
             loadActiveJobs();
             loadRecentObservations();
             
-            // Initialize TensorFlow.js and start analysis
+            // Initialize TensorFlow.js and start analysis (SINGLE CALL ONLY)
             console.log('🤖 TensorFlow.js status:', typeof tf !== 'undefined' ? 'Available' : 'Not loaded');
             
-            // Initialize client analyzer early
+            // Single initialization to prevent stack overflow
             if (typeof tf !== 'undefined') {
                 console.log('✅ TensorFlow.js loaded, initializing client analyzer...');
-                clientAnalyzer.initializeModel().then(() => {
-                    console.log('🧠 Model initialized, starting default analysis...');
-                    setTimeout(() => loadClientAnalysis('south_sea'), 2000);
-                }).catch(err => {
+                try {
+                    await clientAnalyzer.initializeModel();
+                    console.log('🧠 Model initialized successfully, starting default analysis...');
+                    setTimeout(() => loadClientAnalysis('south_sea'), 1500);
+                } catch (err) {
                     console.warn('⚠️ Model init failed, running without ML:', err);
                     setTimeout(() => loadClientAnalysis('south_sea'), 1000);
-                });
+                }
             } else {
                 console.warn('❌ TensorFlow.js not available, running basic analysis');
                 setTimeout(() => loadClientAnalysis('south_sea'), 1000);
