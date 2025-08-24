@@ -1,13 +1,6 @@
 services:
   - type: web
-    name: sat-chat-api
-    runtime: python
-    buildCommand: pip install -r requirements_simple.txt
-    startCommand: python simple_app.py
-    envVars:
-      - key: SENTINEL_HUB_CLIENT_ID
-        sync: false
-      - key: SENTINEL_HUB_CLIENT_SECRET
-        sync: false
-      - key: PYTHON_VERSION
-        value: "3.11"
+    name: sat-chat
+    env: python
+    buildCommand: pip install fastapi uvicorn
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
