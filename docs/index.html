@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌊 SatChat - 해양 폐기물 모니터링 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .loading { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .analysis-card { transition: all 0.3s ease; }
+        .analysis-card:hover { transform: scale(1.02); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #map { height: 500px; width: 100%; border-radius: 8px; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Header -->
+        <header class="gradient-bg rounded-lg p-8 mb-8 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-5xl font-bold mb-3">🌊 SatChat</h1>
+                    <p class="text-xl text-gray-200">AI 기반 해양 폐기물 실시간 모니터링</p>
+                    <p class="text-sm text-gray-300 mt-2">Telefix (텔레픽스) | Sentinel-2 위성 데이터 분석</p>
+                </div>
+                <div class="text-right">
+                    <div id="apiStatus" class="bg-white/20 rounded-lg px-4 py-2 backdrop-blur">
+                        <span class="text-sm">API Status:</span>
+                        <span id="apiStatusText" class="font-bold">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-gray-800 rounded-lg p-6 text-center">
+                <div class="text-3xl font-bold text-blue-400" id="totalDetections">0</div>
+                <div class="text-sm text-gray-400 mt-2">총 감지 건수</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6 text-center">
+                <div class="text-3xl font-bold text-green-400" id="activeRegions">5</div>
+                <div class="text-sm text-gray-400 mt-2">모니터링 지역</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6 text-center">
+                <div class="text-3xl font-bold text-yellow-400" id="avgConfidence">0%</div>
+                <div class="text-sm text-gray-400 mt-2">평균 신뢰도</div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6 text-center">
+                <div class="text-3xl font-bold text-purple-400" id="lastUpdate">--:--</div>
+                <div class="text-sm text-gray-400 mt-2">마지막 업데이트</div>
+            </div>
+        </div>
+
+        <!-- Region Selection -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-8 shadow-xl">
+            <h2 class="text-2xl font-bold mb-4">📍 모니터링 지역 선택</h2>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <button onclick="loadRegionData('west_sea')" class="region-btn bg-blue-600 hover:bg-blue-700 rounded-lg p-4 transition-all">
+                    <div class="text-lg">🌊 서해</div>
+                    <div class="text-xs text-gray-300 mt-1">인천 근해</div>
+                </button>
+                <button onclick="loadRegionData('south_sea')" class="region-btn bg-green-600 hover:bg-green-700 rounded-lg p-4 transition-all">
+                    <div class="text-lg">🌊 남해</div>
+                    <div class="text-xs text-gray-300 mt-1">거제도 근해</div>
+                </button>
+                <button onclick="loadRegionData('east_sea')" class="region-btn bg-purple-600 hover:bg-purple-700 rounded-lg p-4 transition-all">
+                    <div class="text-lg">🌊 동해</div>
+                    <div class="text-xs text-gray-300 mt-1">울산 근해</div>
+                </button>
+                <button onclick="loadRegionData('busan_port')" class="region-btn bg-red-600 hover:bg-red-700 rounded-lg p-4 transition-all">
+                    <div class="text-lg">⚓ 부산항</div>
+                    <div class="text-xs text-gray-300 mt-1">항만 일대</div>
+                </button>
+                <button onclick="loadRegionData('incheon_port')" class="region-btn bg-yellow-600 hover:bg-yellow-700 rounded-lg p-4 transition-all">
+                    <div class="text-lg">⚓ 인천항</div>
+                    <div class="text-xs text-gray-300 mt-1">항만 일대</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Satellite Image -->
+            <div class="bg-gray-800 rounded-lg p-6 analysis-card">
+                <h3 class="text-xl font-bold mb-4">🛰️ 위성 이미지 (RGB)</h3>
+                <div id="satelliteImage" class="bg-gray-700 rounded-lg min-h-[400px] flex items-center justify-center">
+                    <p class="text-gray-400">지역을 선택하세요</p>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-2 text-sm">
+                    <div class="bg-gray-700 rounded p-2 text-center">
+                        <span class="text-gray-400">해상도:</span> <span class="text-white">10m</span>
+                    </div>
+                    <div class="bg-gray-700 rounded p-2 text-center">
+                        <span class="text-gray-400">소스:</span> <span class="text-white">Sentinel-2</span>
+                    </div>
+                    <div class="bg-gray-700 rounded p-2 text-center">
+                        <span class="text-gray-400">밴드:</span> <span class="text-white">B4-B3-B2</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Heat Map -->
+            <div class="bg-gray-800 rounded-lg p-6 analysis-card">
+                <h3 class="text-xl font-bold mb-4">🔥 폐기물 히트맵</h3>
+                <div id="heatmapImage" class="bg-gray-700 rounded-lg min-h-[400px] flex items-center justify-center">
+                    <p class="text-gray-400">분석 대기중</p>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm mb-2">
+                        <span>감지 신뢰도</span>
+                        <span id="detectionConfidence" class="font-bold">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div id="confidenceBar" class="bg-gradient-to-r from-red-500 to-green-500 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Map -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-8 shadow-xl">
+            <h3 class="text-xl font-bold mb-4">🗺️ 실시간 모니터링 지도</h3>
+            <div id="map"></div>
+            <div class="mt-4 flex flex-wrap gap-4">
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
+                    <span class="text-sm">고농도 폐기물</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                    <span class="text-sm">중간 농도</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-sm">저농도/청정</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detection Details -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-8">
+            <h3 class="text-xl font-bold mb-4">📊 상세 분석 결과</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <h4 class="font-semibold mb-3 text-blue-400">스펙트럴 지수</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>NDVI (식생):</span>
+                            <span id="ndviValue" class="font-mono">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>NDWI (수질):</span>
+                            <span id="ndwiValue" class="font-mono">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Depth (수심):</span>
+                            <span id="depthValue" class="font-mono">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Chlorophyll:</span>
+                            <span id="chlorophyllValue" class="font-mono">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-3 text-green-400">폐기물 감지</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>핫스팟 수:</span>
+                            <span id="hotspotCount" class="font-bold text-red-400">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>예상 면적:</span>
+                            <span id="debrisArea" class="font-bold text-orange-400">0 km²</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>플라스틱 비율:</span>
+                            <span id="plasticRatio" class="font-bold text-yellow-400">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-3 text-purple-400">환경 조건</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>데이터 소스:</span>
+                            <span id="dataSource" class="font-mono">Sentinel-2</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>촬영 시간:</span>
+                            <span id="captureTime" class="font-mono">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>구름 커버:</span>
+                            <span id="cloudCover" class="font-mono">< 30%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-400 text-sm py-6">
+            <p>© 2024 Telefix (텔레픽스) | SatChat Marine Debris Monitoring System</p>
+            <p class="mt-2">
+                <a href="https://github.com/djyalu/sat_chat" class="hover:text-white">GitHub</a> |
+                <a href="https://sat-chat.onrender.com/" class="hover:text-white">API Docs</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = 'https://sat-chat.onrender.com';  // Render backend
+        let map = null;
+        let markers = [];
+        let currentRegion = null;
+        let totalDetectionsCount = 0;
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([36.0, 127.5], 7);  // Korea center
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add Korea regions as rectangles
+            const regions = {
+                'west_sea': [[35.5, 124.5], [37.5, 126.5]],
+                'south_sea': [[34.6, 128.4], [35.0, 128.8]],
+                'east_sea': [[35.5, 129.0], [36.5, 130.0]],
+                'busan_port': [[35.0, 129.0], [35.2, 129.2]],
+                'incheon_port': [[37.4, 126.5], [37.6, 126.7]]
+            };
+
+            Object.entries(regions).forEach(([name, bounds]) => {
+                L.rectangle(bounds, {
+                    color: '#3b82f6',
+                    weight: 2,
+                    fillOpacity: 0.1
+                }).addTo(map).on('click', () => loadRegionData(name));
+            });
+        }
+
+        // Check API status
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (response.ok) {
+                    document.getElementById('apiStatusText').textContent = '✅ Online';
+                    document.getElementById('apiStatusText').className = 'font-bold text-green-400';
+                } else {
+                    throw new Error('API offline');
+                }
+            } catch (error) {
+                document.getElementById('apiStatusText').textContent = '❌ Offline';
+                document.getElementById('apiStatusText').className = 'font-bold text-red-400';
+            }
+        }
+
+        // Load region data
+        async function loadRegionData(region) {
+            currentRegion = region;
+            
+            // Update UI to show loading
+            document.getElementById('satelliteImage').innerHTML = '<div class="loading w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>';
+            document.getElementById('heatmapImage').innerHTML = '<div class="loading w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full mx-auto"></div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/region/${region}`);
+                if (!response.ok) throw new Error('Failed to fetch data');
+                
+                const data = await response.json();
+                console.log('Region data:', data);
+                
+                // Update images
+                if (data.image_rgb) {
+                    document.getElementById('satelliteImage').innerHTML = 
+                        `<img src="data:image/png;base64,${data.image_rgb}" alt="Satellite" class="w-full h-auto rounded-lg">`;
+                }
+                
+                if (data.heatmap || data.image_ndwi) {
+                    const heatmapSrc = data.heatmap || data.image_ndwi;
+                    document.getElementById('heatmapImage').innerHTML = 
+                        `<img src="data:image/png;base64,${heatmapSrc}" alt="Heatmap" class="w-full h-auto rounded-lg">`;
+                }
+                
+                // Update statistics
+                const confidence = (data.confidence || 0) * 100;
+                document.getElementById('detectionConfidence').textContent = `${confidence.toFixed(1)}%`;
+                document.getElementById('confidenceBar').style.width = `${confidence}%`;
+                
+                // Update spectral indices
+                if (data.analysis_stats) {
+                    document.getElementById('ndviValue').textContent = data.analysis_stats.ndvi_avg?.toFixed(3) || '-';
+                    document.getElementById('ndwiValue').textContent = data.analysis_stats.ndwi_avg?.toFixed(3) || '-';
+                    document.getElementById('depthValue').textContent = data.analysis_stats.depth_avg?.toFixed(3) || '-';
+                    document.getElementById('chlorophyllValue').textContent = data.analysis_stats.chlorophyll_avg?.toFixed(3) || '-';
+                }
+                
+                // Update debris detection
+                const hotspots = data.hotspots || [];
+                document.getElementById('hotspotCount').textContent = hotspots.length;
+                document.getElementById('debrisArea').textContent = `${data.plastic_area_km2 || 0} km²`;
+                document.getElementById('plasticRatio').textContent = `${((data.plastic_percentage || 0) * 100).toFixed(1)}%`;
+                
+                // Update capture info
+                document.getElementById('dataSource').textContent = data.data_source || 'Sentinel-2';
+                document.getElementById('captureTime').textContent = new Date(data.timestamp).toLocaleString('ko-KR');
+                
+                // Update map markers
+                updateMapMarkers(hotspots, data.bbox);
+                
+                // Update global stats
+                totalDetectionsCount += hotspots.length;
+                document.getElementById('totalDetections').textContent = totalDetectionsCount;
+                document.getElementById('avgConfidence').textContent = `${confidence.toFixed(0)}%`;
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('ko-KR');
+                
+            } catch (error) {
+                console.error('Error loading region data:', error);
+                document.getElementById('satelliteImage').innerHTML = 
+                    '<p class="text-red-400">데이터 로드 실패</p>';
+                document.getElementById('heatmapImage').innerHTML = 
+                    '<p class="text-red-400">분석 실패</p>';
+            }
+        }
+
+        // Update map markers
+        function updateMapMarkers(hotspots, bbox) {
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // Add new markers
+            hotspots.forEach(hotspot => {
+                const color = hotspot.intensity > 0.7 ? 'red' : 
+                             hotspot.intensity > 0.4 ? 'yellow' : 'green';
+                
+                const marker = L.circleMarker([hotspot.lat, hotspot.lon], {
+                    radius: 8,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+                
+                marker.bindPopup(`
+                    <strong>폐기물 감지</strong><br>
+                    신뢰도: ${(hotspot.confidence || 0)}%<br>
+                    픽셀 수: ${hotspot.pixel_count || 0}<br>
+                    유형: ${hotspot.debris_type || 'unknown'}
+                `);
+                
+                markers.push(marker);
+            });
+            
+            // Zoom to region if bbox available
+            if (bbox && bbox.length >= 4) {
+                const bounds = [[bbox[1], bbox[0]], [bbox[3], bbox[2]]];
+                map.fitBounds(bounds);
+            }
+        }
+
+        // Initialize on load
+        window.onload = async () => {
+            console.log('Initializing SatChat Dashboard...');
+            initMap();
+            await checkApiStatus();
+            
+            // Auto-load first region
+            setTimeout(() => loadRegionData('south_sea'), 1000);
+            
+            // Periodic status check
+            setInterval(checkApiStatus, 30000);
+        };
+    </script>
+</body>
+</html>
