@@ -44,4 +44,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8002))
     host = "0.0.0.0"
     print(f"🚀 Starting Simple App on {host}:{port}")
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run("simple_app:app", host=host, port=port, reload=False)
