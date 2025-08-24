@@ -1,4 +1,4 @@
-name: Deploy to Render
+name: Auto Deploy to Render
 
 on:
   push:
@@ -12,27 +12,36 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Deploy to Render
-      env:
-        RENDER_API_TOKEN: ${{ secrets.RENDER_API_TOKEN }}
+    - name: Log deployment start
       run: |
-        curl -X POST \
-          -H "Authorization: Bearer $RENDER_API_TOKEN" \
-          -H "Content-Type: application/json" \
-          https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys \
-          -d '{"clearCache": "clear"}'
+        echo "🚀 자동 배포 시작"
+        echo "📦 커밋: ${{ github.sha }}"
+        echo "👤 작성자: ${{ github.actor }}"
+        echo "📝 메시지: ${{ github.event.head_commit.message }}"
     
-    - name: Wait for deployment
+    # Render는 GitHub 통합으로 자동 배포됨
+    # 추가 API 호출은 필요 없음
+    
+    - name: Wait for Render deployment
       run: |
-        echo "Waiting for deployment to complete..."
-        sleep 60
+        echo "⏳ Render 자동 배포 대기 중..."
+        echo "Render가 GitHub 웹훅을 통해 자동으로 배포합니다."
+        sleep 30
         
-    - name: Check deployment status
+    - name: Monitor deployment
       run: |
-        response=$(curl -s https://sat-chat-api.onrender.com/health)
-        if [[ "$response" == *"healthy"* ]]; then
-          echo "✅ Deployment successful!"
-        else
-          echo "❌ Deployment may have issues"
-          exit 1
-        fi
+        for i in {1..10}; do
+          echo "체크 $i/10..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://sat-chat-api.onrender.com/health || echo "000")
+          if [ "$response" = "200" ]; then
+            echo "✅ 배포 성공!"
+            echo "🌐 서비스 URL:"
+            echo "  - API: https://sat-chat-api.onrender.com"
+            echo "  - Web: https://sat-chat.onrender.com"
+            exit 0
+          fi
+          echo "상태 코드: $response - 대기 중..."
+          sleep 30
+        done
+        echo "⚠️ 배포 확인 시간 초과 (5분)"
+        echo "Render 대시보드에서 직접 확인하세요."

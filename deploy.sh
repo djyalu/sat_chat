@@ -1,7 +1,7 @@
 #!/bin/bash
-# SatChat 원클릭 자동 배포 스크립트
+# SatChat 완전 자동 배포 스크립트 (Git Push = Render Deploy)
 
-echo "🚀 SatChat 원클릭 자동 배포"
+echo "🚀 SatChat 완전 자동 배포 시작"
 echo "========================================"
 
 # Git 상태 확인
@@ -12,39 +12,45 @@ if [[ -n $(git status --porcelain) ]]; then
     # 자동 커밋
     echo "📦 자동 커밋 중..."
     git add -A
-    git commit -m "Auto deployment - $(date '+%Y-%m-%d %H:%M:%S')
+    COMMIT_MSG="Auto deployment - $(date '+%Y-%m-%d %H:%M:%S')
 
 🤖 Generated with Claude Code
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
+    git commit -m "$COMMIT_MSG"
     
-    # GitHub 푸시
-    echo "🔄 GitHub 푸시 중..."
+    # GitHub 푸시 (이것이 Render 자동 배포를 트리거)
+    echo "🔄 GitHub 푸시 중 (Render 자동 배포 트리거)..."
     git push origin main
-    echo "✅ 푸시 완료!"
+    echo "✅ 푸시 완료! Render 배포가 자동으로 시작됩니다."
+    
+    echo ""
+    echo "========================================"
+    echo "🎯 Render 자동 배포 시작됨!"
+    echo "========================================"
+    echo ""
+    echo "📊 배포 상태 확인:"
+    echo "  https://dashboard.render.com/"
+    echo ""
+    echo "⏱️ 예상 시간: 3-5분"
+    echo ""
+    echo "🌐 배포 완료 후 접속:"
+    echo "  https://sat-chat.onrender.com"
+    echo "  https://sat-chat-api.onrender.com"
+    echo ""
+    
+    # 배포 상태 모니터링 옵션
+    echo "배포 상태를 모니터링 하시겠습니까? (y/n): "
+    read -t 5 monitor
+    if [[ "$monitor" == "y" ]]; then
+        echo "🔍 배포 모니터링 시작..."
+        python3 monitor_deployment.py
+    fi
 else
     echo "ℹ️ 변경 사항 없음"
+    echo ""
+    echo "💡 Tip: 파일을 수정한 후 다시 실행하세요."
 fi
 
-# Render 배포 URL 생성
-DEPLOY_URL="https://render.com/deploy?repo=https://github.com/djyalu/sat_chat"
-
 echo ""
-echo "========================================"
-echo "🌐 Render 자동 배포 준비 완료!"
-echo "========================================"
-echo ""
-echo "다음 URL을 브라우저에서 열어주세요:"
-echo "$DEPLOY_URL"
-echo ""
-echo "또는 아래 명령 실행:"
-echo "open '$DEPLOY_URL'  # macOS"
-echo "xdg-open '$DEPLOY_URL'  # Linux"
-echo "start '$DEPLOY_URL'  # Windows"
-echo ""
-echo "📋 브라우저에서:"
-echo "1. 'Connect GitHub' 클릭"
-echo "2. 'Deploy' 클릭"
-echo "3. 5분 대기"
-echo ""
-echo "✅ 완료!"
+echo "✅ 자동 배포 프로세스 완료!"
