@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "satchat"
+version = "1.0.0"
+description = "Marine Debris Monitoring System"
+authors = ["SatChat Team"]
+readme = "README.md"
+packages = []
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.104.1"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
+python-dotenv = "^1.0.0"
+python-multipart = "^0.0.6"
+requests = "^2.31.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
