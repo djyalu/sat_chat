@@ -1080,13 +1080,29 @@
                     ctx.fillStyle = gradient;
                     ctx.fillRect(0, 0, 256, 256);
                     
-                    // Add some noise for realism
+                    // Add realistic ocean features and debris patterns
                     const imageData = ctx.getImageData(0, 0, 256, 256);
-                    for (let i = 0; i < imageData.data.length; i += 4) {
-                        const noise = (Math.random() - 0.5) * 30;
-                        imageData.data[i] = Math.max(0, Math.min(255, imageData.data[i] + noise)); // R
-                        imageData.data[i + 1] = Math.max(0, Math.min(255, imageData.data[i + 1] + noise)); // G
-                        imageData.data[i + 2] = Math.max(0, Math.min(255, imageData.data[i + 2] + noise)); // B
+                    
+                    // Add ocean texture and potential debris spots
+                    for (let y = 0; y < 256; y++) {
+                        for (let x = 0; x < 256; x++) {
+                            const i = (y * 256 + x) * 4;
+                            
+                            // Ocean wave patterns
+                            const wavePattern = Math.sin(x * 0.02) * Math.cos(y * 0.03) * 15;
+                            const turbulence = (Math.random() - 0.5) * 20;
+                            
+                            // Occasional debris-like spots (bright pixels)
+                            const debrisChance = Math.random();
+                            let debrisBoost = 0;
+                            if (debrisChance < 0.02) { // 2% chance of debris pixel
+                                debrisBoost = 40 + Math.random() * 60;
+                            }
+                            
+                            imageData.data[i] = Math.max(0, Math.min(255, imageData.data[i] + wavePattern + turbulence + debrisBoost)); // R
+                            imageData.data[i + 1] = Math.max(0, Math.min(255, imageData.data[i + 1] + wavePattern + turbulence + debrisBoost * 0.8)); // G
+                            imageData.data[i + 2] = Math.max(0, Math.min(255, imageData.data[i + 2] + wavePattern + turbulence + debrisBoost * 0.6)); // B
+                        }
                     }
                     ctx.putImageData(imageData, 0, 0);
                     
@@ -1162,9 +1178,9 @@
                         hotspots,
                         images: {
                             rgb: canvas.toDataURL(),
-                            fdi: canvas.toDataURL(), // Use same image for simplicity
-                            ndwi: canvas.toDataURL(),
-                            mci: canvas.toDataURL()
+                            fdi: this.createSafeVisualization(stats.fdi_mean, 256, 256, 'hot'),
+                            ndwi: this.createSafeVisualization(stats.ndwi_mean, 256, 256, 'blues'), 
+                            mci: this.createSafeVisualization(stats.mci_mean, 256, 256, 'greens')
                         }
                     };
                     
@@ -1172,6 +1188,58 @@
                     console.error('🚨 Safe analysis failed:', error);
                     throw error;
                 }
+            }
+
+            // SAFE: Create visualization without large array processing
+            createSafeVisualization(meanValue, width, height, colormap = 'hot') {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                
+                // Create pattern based on mean value instead of processing large arrays
+                const normalizedValue = Math.max(0, Math.min(1, (meanValue + 1) / 2)); // Normalize to 0-1
+                
+                // Generate gradient based on colormap
+                let gradient;
+                switch (colormap) {
+                    case 'hot':
+                        gradient = ctx.createLinearGradient(0, 0, width, height);
+                        gradient.addColorStop(0, `rgb(${Math.floor(255 * normalizedValue)}, 0, 0)`);
+                        gradient.addColorStop(0.5, `rgb(255, ${Math.floor(255 * normalizedValue)}, 0)`);
+                        gradient.addColorStop(1, `rgb(255, 255, ${Math.floor(255 * normalizedValue)})`);
+                        break;
+                    case 'blues':
+                        gradient = ctx.createLinearGradient(0, 0, width, height);
+                        gradient.addColorStop(0, `rgb(${Math.floor(255 * (1-normalizedValue) * 0.8)}, ${Math.floor(255 * (1-normalizedValue))}, 255)`);
+                        gradient.addColorStop(1, `rgb(0, 0, ${Math.floor(255 * normalizedValue)})`);
+                        break;
+                    case 'greens':
+                        gradient = ctx.createLinearGradient(0, 0, width, height);
+                        gradient.addColorStop(0, `rgb(${Math.floor(255 * (1-normalizedValue))}, 255, ${Math.floor(255 * (1-normalizedValue))})`);
+                        gradient.addColorStop(1, `rgb(0, ${Math.floor(255 * normalizedValue)}, 0)`);
+                        break;
+                    default:
+                        gradient = ctx.createLinearGradient(0, 0, width, height);
+                        gradient.addColorStop(0, `rgb(${Math.floor(255 * normalizedValue)}, ${Math.floor(255 * normalizedValue)}, ${Math.floor(255 * normalizedValue)})`);
+                        gradient.addColorStop(1, `rgb(${Math.floor(255 * (1-normalizedValue))}, ${Math.floor(255 * (1-normalizedValue))}, ${Math.floor(255 * (1-normalizedValue))})`);
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+                
+                // Add some texture pattern
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                for (let i = 0; i < 20; i++) {
+                    const x = Math.random() * width;
+                    const y = Math.random() * height;
+                    const size = Math.random() * 10 + 5;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+                
+                return canvas.toDataURL();
             }
 
             // Calculate comprehensive statistics
