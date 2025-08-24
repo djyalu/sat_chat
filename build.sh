@@ -1,15 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Render build script
+
 set -e
 
-echo "🚀 Custom build script - forcing pip usage"
-echo "Current directory: $(pwd)"
-echo "Python version: $(python --version)"
-echo "Pip version: $(pip --version)"
+echo "=== Render Build Script Starting ==="
+echo "Python version:"
+python --version
 
-echo "📦 Installing dependencies with pip..."
+echo "Installing pip dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "✅ Build completed successfully!"
-echo "📋 Installed packages:"
-pip list | head -10
+echo "=== Build completed successfully ==="
