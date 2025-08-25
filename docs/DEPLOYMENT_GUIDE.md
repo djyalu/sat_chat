@@ -15,9 +15,9 @@ SatChat은 **Client-Heavy Architecture**를 기반으로 한 이중 배포 구�
 │                                         │
 │  ┌─────────────┐  ┌─────────────────┐   │
 │  │     PWA     │  │   Static Assets │   │
-│  │ TensorFlow  │  │   CSS/JS/Images │   │
-│  │    .js      │  └─────────────────┘   │
-│  └─────────────┘                        │
+│  │ Pure JS AI  │  │   CSS/JS/Images │   │
+│  │   Engine    │  │  Satellite Tiles │   │
+│  └─────────────┘  └─────────────────┘   │
 └─────────────────────────────────────────┘
                     │
                     ▼ (API Calls)
@@ -271,6 +271,234 @@ docker-compose -f docker-compose.dev.yml up -d
 
 # 로그 확인
 docker-compose logs -f satchat-api
+```
+
+## 🛰️ 위성 이미지 시스템 배포
+
+### Esri World Imagery 통합 설정
+
+#### 클라이언트 측 설정
+```javascript
+// docs/index.html 내부 설정
+const satelliteConfig = {
+    // Esri World Imagery 서비스 URL
+    tileUrl: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    
+    // 성능 최적화 설정
+    maxZoom: 18,
+    tileSize: 256,
+    attribution: "Tiles © Esri — Source: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community",
+    
+    // 한국 연안 최적화
+    center: [35.2, 128.6],
+    initialZoom: 8,
+    bounds: [[33.0, 124.0], [39.0, 132.0]] // 한국 연안 경계
+};
+```
+
+#### Interactive Map 레이어 배포 확인
+```bash
+#!/bin/bash
+# verify-satellite-layers.sh
+
+echo "🛰️ Verifying satellite imagery deployment..."
+
+# 1. 기본 위성 이미지 로드 테스트
+curl -I "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/8/108/95" \
+  -H "User-Agent: SatChat/2.0" \
+  -H "Referer: https://djyalu.github.io/sat_chat/"
+
+# 2. Leaflet.js 로드 확인
+curl -I "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+
+# 3. 클라이언트 맵 초기화 테스트
+echo "Testing map initialization..."
+curl -s "https://djyalu.github.io/sat_chat/" | grep -q "Interactive Analysis Map" && \
+  echo "✅ Interactive Map found" || echo "❌ Interactive Map not found"
+
+echo "🗺️ Satellite imagery deployment verification complete"
+```
+
+### AI 분석 엔진 배포 검증
+
+#### TensorFlow.js 제거 확인
+```bash
+#!/bin/bash
+# verify-ai-engine.sh
+
+echo "🤖 Verifying AI analysis engine deployment..."
+
+CLIENT_URL="https://djyalu.github.io/sat_chat/"
+
+# 1. TensorFlow.js 참조가 제거되었는지 확인
+echo "Checking for TensorFlow.js references..."
+if curl -s "$CLIENT_URL" | grep -q "tensorflow"; then
+    echo "❌ TensorFlow.js references still found"
+    exit 1
+else
+    echo "✅ TensorFlow.js successfully removed"
+fi
+
+# 2. Pure JS AI 엔진 존재 확인
+echo "Checking for Pure JS AI engine..."
+if curl -s "$CLIENT_URL" | grep -q "ultimateAnalysis"; then
+    echo "✅ Pure JS AI engine found"
+else
+    echo "❌ Pure JS AI engine not found"
+    exit 1
+fi
+
+# 3. 스택 오버플로 방지 시스템 확인
+echo "Checking stack overflow protection..."
+if curl -s "$CLIENT_URL" | grep -q "globalProcessingLock"; then
+    echo "✅ Stack overflow protection active"
+else
+    echo "❌ Stack overflow protection not found"
+    exit 1
+fi
+
+echo "🛡️ AI analysis engine deployment verification complete"
+```
+
+### 배포 후 테스트 스위트
+
+#### 전체 시스템 테스트
+```javascript
+// test-deployment.js
+// 브라우저 콘솔에서 실행
+
+async function testSatChatDeployment() {
+    console.log('🧪 Starting SatChat deployment test...');
+    
+    const tests = [];
+    
+    // 1. 맵 초기화 테스트
+    tests.push({
+        name: 'Map Initialization',
+        test: () => !!window.map && window.mapInitialized,
+        expected: true
+    });
+    
+    // 2. AI 분석 엔진 테스트
+    tests.push({
+        name: 'AI Analysis Engine',
+        test: () => typeof window.ultimateAnalysis === 'function',
+        expected: true
+    });
+    
+    // 3. 레이어 전환 테스트
+    tests.push({
+        name: 'Layer Switching',
+        test: () => typeof window.changeMapLayer === 'function',
+        expected: true
+    });
+    
+    // 4. 스택 오버플로 방지 테스트
+    tests.push({
+        name: 'Stack Overflow Protection',
+        test: () => typeof window.globalProcessingLock !== 'undefined',
+        expected: true
+    });
+    
+    // 5. 위성 이미지 레이어 테스트
+    tests.push({
+        name: 'Satellite Imagery',
+        test: () => {
+            changeMapLayer('rgb');
+            return window.currentTileLayer && 
+                   window.currentTileLayer._url.includes('World_Imagery');
+        },
+        expected: true
+    });
+    
+    // 테스트 실행
+    let passed = 0;
+    let failed = 0;
+    
+    for (const test of tests) {
+        try {
+            const result = test.test();
+            if (result === test.expected) {
+                console.log(`✅ ${test.name}: PASSED`);
+                passed++;
+            } else {
+                console.log(`❌ ${test.name}: FAILED (got ${result}, expected ${test.expected})`);
+                failed++;
+            }
+        } catch (error) {
+            console.log(`❌ ${test.name}: ERROR - ${error.message}`);
+            failed++;
+        }
+    }
+    
+    console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed`);
+    return { passed, failed, total: tests.length };
+}
+
+// 테스트 실행
+testSatChatDeployment();
+```
+
+### 성능 모니터링
+
+#### 위성 타일 로딩 성능
+```javascript
+// performance-monitor.js
+class SatelliteTilePerformanceMonitor {
+    constructor() {
+        this.metrics = {
+            tileLoadTimes: [],
+            failedTiles: 0,
+            totalTiles: 0
+        };
+    }
+    
+    startMonitoring() {
+        // Leaflet 이벤트 리스너 추가
+        if (window.map) {
+            window.map.on('tileloadstart', (e) => {
+                e.tile._startTime = performance.now();
+                this.metrics.totalTiles++;
+            });
+            
+            window.map.on('tileload', (e) => {
+                const loadTime = performance.now() - e.tile._startTime;
+                this.metrics.tileLoadTimes.push(loadTime);
+                
+                if (loadTime > 2000) {
+                    console.warn(`Slow tile load: ${loadTime}ms`);
+                }
+            });
+            
+            window.map.on('tileerror', (e) => {
+                this.metrics.failedTiles++;
+                console.error('Tile load failed:', e);
+            });
+        }
+    }
+    
+    getMetrics() {
+        const avgLoadTime = this.metrics.tileLoadTimes.reduce((a, b) => a + b, 0) / 
+                           this.metrics.tileLoadTimes.length;
+        
+        return {
+            averageLoadTime: avgLoadTime,
+            totalTiles: this.metrics.totalTiles,
+            failedTiles: this.metrics.failedTiles,
+            successRate: ((this.metrics.totalTiles - this.metrics.failedTiles) / 
+                         this.metrics.totalTiles * 100).toFixed(2) + '%'
+        };
+    }
+}
+
+// 모니터링 시작
+const tileMonitor = new SatelliteTilePerformanceMonitor();
+tileMonitor.startMonitoring();
+
+// 5분 후 성능 보고서
+setTimeout(() => {
+    console.log('🛰️ Satellite Tile Performance Report:', tileMonitor.getMetrics());
+}, 300000);
 ```
 
 ## 📊 모니터링 및 운영
