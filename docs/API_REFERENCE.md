@@ -282,6 +282,141 @@ function RegionSelector() {
 }
 ```
 
+## 🤖 클라이언트 측 AI 분석 엔진
+
+SatChat의 핵심은 **클라이언트에서 실행되는 AI 분석 엔진**입니다. TensorFlow.js를 제거하고 순수 JavaScript로 구현되었습니다.
+
+### AI 분석 함수 사용법
+
+#### 기본 분석 실행
+```javascript
+// 전역 AI 분석 함수 호출
+window.ultimateAnalysis('west_sea');
+
+// 또는 안전한 방식으로 호출
+if (window.ultimateAnalysis) {
+    window.ultimateAnalysis('busan_port');
+}
+```
+
+#### 분석 결과 구조
+```javascript
+// 분석 완료 후 DOM에서 결과 추출
+const results = {
+    fdi: document.getElementById('fdiMean')?.textContent,
+    ndwi: document.getElementById('ndwiMean')?.textContent,
+    mci: document.getElementById('mciMean')?.textContent,
+    turbidity: document.getElementById('turbidityMean')?.textContent,
+    debrisClusters: document.getElementById('debrisClusters')?.textContent,
+    confidence: document.getElementById('mlConfidence')?.textContent
+};
+```
+
+#### Interactive Map 레이어 제어
+```javascript
+// 위성 이미지 레이어로 전환
+changeMapLayer('rgb');
+
+// FDI 분석 레이어로 전환
+changeMapLayer('fdi');
+
+// NDWI 수질 분석 레이어로 전환
+changeMapLayer('ndwi');
+
+// MCI 클로로필 분석 레이어로 전환
+changeMapLayer('mci');
+
+// AI 폐기물 탐지 레이어로 전환
+changeMapLayer('debris');
+```
+
+### 스택 오버플로 방지 시스템
+
+AI 분석 엔진은 강력한 보호 메커니즘을 포함합니다:
+
+```javascript
+// 글로벌 잠금 상태 확인
+if (globalProcessingLock) {
+    console.warn('⚠️ 분석이 이미 실행 중입니다');
+    return;
+}
+
+// 호출 깊이 제한 (최대 5단계)
+if (callDepth > MAX_CALL_DEPTH) {
+    console.error('🚨 호출 깊이 초과, 스택 오버플로 방지');
+    return;
+}
+
+// 시간 기반 보호 (5초 간격)
+const now = Date.now();
+if (processingStartTime && (now - processingStartTime) < 5000) {
+    console.warn('⚠️ 너무 빠른 호출, 대기 중...');
+    return;
+}
+```
+
+### 분석 성능 모니터링
+
+#### 분석 시간 측정
+```javascript
+// 분석 시작 시간 기록
+const startTime = performance.now();
+
+// 분석 실행
+window.ultimateAnalysis('south_sea');
+
+// 완료 시간 계산 (콘솔에서 확인)
+// 일반적으로 100-500ms 소요
+```
+
+#### 메모리 사용량 확인
+```javascript
+// 메모리 정보 (Chrome DevTools에서 사용 가능)
+if (performance.memory) {
+    console.log('Used:', performance.memory.usedJSHeapSize);
+    console.log('Total:', performance.memory.totalJSHeapSize);
+    console.log('Limit:', performance.memory.jsHeapSizeLimit);
+}
+```
+
+### 디버깅 도구
+
+#### 맵 기능 전체 테스트
+```javascript
+// 브라우저 콘솔에서 실행
+window.testMap();
+
+// 또는 특정 레이어만 테스트
+changeMapLayer('fdi');
+console.log('FDI 레이어 테스트 완료');
+```
+
+#### 분석 상태 모니터링
+```javascript
+// 분석 상태 실시간 확인
+setInterval(() => {
+    console.log('Processing Lock:', globalProcessingLock);
+    console.log('Call Depth:', callDepth);
+    console.log('Map Initialized:', mapInitialized);
+}, 1000);
+```
+
+### 오프라인 캐싱
+
+클라이언트에서 분석 결과를 자동으로 캐시합니다:
+
+```javascript
+// 분석 결과 캐시 저장
+window.cacheAnalysisResult('west_sea', analysisData);
+
+// 캐시된 결과 확인
+const cachedResult = localStorage.getItem('satchat_analysis_west_sea');
+if (cachedResult) {
+    const data = JSON.parse(cachedResult);
+    console.log('Cached analysis:', data);
+}
+```
+
 ## 📊 성능 특성
 
 ### Response Times
